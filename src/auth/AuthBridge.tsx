@@ -1,15 +1,19 @@
-import { useAuthenticator, Loader } from "@aws-amplify/ui-react";
+import { useAuthenticator } from "@aws-amplify/ui-react";
+import { fetchAuthSession } from 'aws-amplify/auth';
 import React from 'react';
-import { useNavigate } from "react-router-dom";
 
-import SignIn from './SignIn.tsx';
 import { AuthStatus } from './data/AuthStatus.ts';
 import { AuthContextProvider } from "./AuthContextProvider.tsx";
-import { authManager } from "./manager.tsx";
+import { AuthManager } from "./AuthManager.ts";
+import { AuthContextData } from "./data/AuthContextData.ts";
 
-type AuthBridgeProps = { 
+import LargeLoader from "../components/LargeLoader.tsx";
+
+interface AuthBridgeProps { 
     children: React.ReactNode
 };
+
+const authManager: AuthManager = new AuthManager();
 
 export default function AuthBridge({ children }: AuthBridgeProps) {
     /* 
@@ -23,14 +27,31 @@ export default function AuthBridge({ children }: AuthBridgeProps) {
     */
 
     const { authStatus: amplifyAuthStatus } = useAuthenticator((ctx) => [ctx.authStatus]); // triggers rerenders with useEffect behavior
+    const [ contextData, setContextData ] = React.useState<AuthContextData>(authManager.getContextData());
 
-    // below runs DURING each render to prevent flashing or stuttering; maybe optimize?
-    authManager.setStatusFromAmplifyAuthStatus(amplifyAuthStatus);
-    const currentAuthStatus = authManager.getStatus();
+    React.useEffect(() => {
+        authManager.setStatusFromAmplifyAuthStatus(amplifyAuthStatus);
+
+        (async () => {
+            try {
+                const sessionInfo = await fetchAuthSession();
+                authManager.processAmplifySession(sessionInfo);
+            } catch (error) {
+                console.error("Error occurred while initializing auth manager (you might be logged out; see below).");
+                console.error(error);
+            } finally {
+                authManager.triggerRerender();
+                const newContextData = authManager.getContextData();
+                setContextData(newContextData); // trigger a rerender
+            }
+        })();
+    }, [amplifyAuthStatus]);
 
     return (
-        <AuthContextProvider>
-            {currentAuthStatus == AuthStatus.LOADING ? <Loader variation="linear"></Loader> : children}
+        <AuthContextProvider authContextData={contextData}>
+            {AuthStatus.isEqual(contextData.getStatus(), AuthStatus.LOADING) ? 
+            <LargeLoader></LargeLoader>
+            : children}
         </AuthContextProvider>
     )
 }

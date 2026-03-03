@@ -1,3 +1,7 @@
 export default function Footer() {
-    return (<></>);
+    return (
+        <div className="bg-tertiary h-(--footer-height)">
+
+        </div>
+    );
 }

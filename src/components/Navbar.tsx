@@ -1,18 +1,19 @@
-import { useAuthenticator } from '@aws-amplify/ui-react';
-import { signOut } from 'aws-amplify/auth';
+import ROUTES from '../routes.ts';
+
+import { AuthContextData, AuthStatus, useAuth } from '../auth';
+import ProfileIcon from './ProfileIcon.tsx';
 
 export default function Navbar() {
-    const { authStatus } = useAuthenticator((ctx) => [ ctx.authStatus ]);
+    const authContextData: AuthContextData = useAuth();
+    const authStatus = authContextData.getStatus();
 
     return (
-        <div className="sticky top-0 z-1024 bg-white shadow-md h-25">
-            {authStatus == 'authenticated' ? 
-                <a onClick={ async () => { await signOut() } }>
-                    Sign out
-                </a> : 
-                <a>
-                    Sign in
-                </a>
+        <div className="sticky top-0 z-1024 shadow-md h-(--navbar-height) flex justify-end items-center 
+                        p-6 gap-6 bg-secondary">
+            <a href={ROUTES.HOME}>Home</a>
+            {AuthStatus.isEqual(authStatus, AuthStatus.LOGGED_OUT) ?
+                <a href={ROUTES.LOGIN}>Sign in</a>
+                : <ProfileIcon></ProfileIcon>
             }
         </div>
     )

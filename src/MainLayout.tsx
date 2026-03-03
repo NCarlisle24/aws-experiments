@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router';
+import { Outlet } from 'react-router'; // accesses children in the react router
 
 import './global.css';
 import Navbar from './components/Navbar.tsx';
@@ -6,14 +6,14 @@ import Footer from './components/Footer.tsx';
 
 export default function MainLayout() {
     return (
-        <div>
+        <div className="bg-primary text-white min-h-screen flex flex-col h-full">
             <Navbar />
 
-            <main>
+            <main className="flex-1 h-full">
                 <Outlet />
             </main>
 
             <Footer />
         </div>
-    )
+    );
 }

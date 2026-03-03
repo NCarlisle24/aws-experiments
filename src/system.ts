@@ -1,18 +1,19 @@
 import { createBrowserRouter } from 'react-router';
+import ROUTES from './routes.ts';
 import MainLayout from './MainLayout.tsx';
 import App from './components/App.tsx';
-import SignIn from './auth/SignIn.tsx'
+import SignIn from './components/LoginPage.tsx'
 
 export const router = createBrowserRouter([
     {
         Component: MainLayout,
         children: [
             {
-                path: "/app",
+                path: ROUTES.HOME,
                 Component: App
             },
             {
-                path: "/login",
+                path: ROUTES.LOGIN,
                 Component: SignIn
             }
         ]

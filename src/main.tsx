@@ -9,7 +9,6 @@ import { RouterProvider } from 'react-router-dom';
 // auth imports
 import { Authenticator } from '@aws-amplify/ui-react';
 import AuthBridge from './auth/AuthBridge.tsx';
-import { authManager } from './auth/manager.tsx';
 
 // amplify outputs imports
 import { Amplify } from 'aws-amplify';

@@ -1,4 +1,5 @@
 import { defineAuth } from '@aws-amplify/backend';
+import { USER_GROUPS } from '../data/groups';
 
 /**
  * Define and configure your auth resource
@@ -9,7 +10,7 @@ export const auth = defineAuth({
     email: true,
   },
   groups: [
-    "viewer",
-    "admin"
+    USER_GROUPS.ADMIN,
+    USER_GROUPS.VIEWER
   ]
 });

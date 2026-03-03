@@ -1,1 +1,14 @@
-@import 'tailwindcss'
+@import 'tailwindcss';
+
+@theme {
+    --navbar-height: 70px;
+    --footer-height: 100px;
+    --color-primary: #2c6191;
+    --color-secondary: #1d232a;
+    --color-tertiary: #2a323c;
+}
+
+html, body, #root {
+    height: 100%;
+    background-color: var(--color-primary);
+}
