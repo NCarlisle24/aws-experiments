@@ -6,9 +6,16 @@
     --color-primary: #2c6191;
     --color-secondary: #1d232a;
     --color-tertiary: #2a323c;
+    --color-quaternary: #7ba22b;
 }
 
 html, body, #root {
     height: 100%;
     background-color: var(--color-primary);
+}
+
+@layer components {
+    .title {
+        @apply text-5xl font-bold;
+    }
 }

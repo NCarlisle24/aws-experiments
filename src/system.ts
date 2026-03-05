@@ -1,8 +1,13 @@
 import { createBrowserRouter } from 'react-router';
+
 import ROUTES from './routes.ts';
+import { RequireAuth } from './auth';
 import MainLayout from './MainLayout.tsx';
-import App from './components/App.tsx';
-import SignIn from './components/LoginPage.tsx'
+import Home from './pages/Home.tsx';
+import SignIn from './pages/LoginPage.tsx';
+import ProfilePage from './pages/ProfilePage.tsx';
+import ProjectsPage from './pages/ProjectsPage.tsx';
+import CreateProjectPage from './pages/CreateProjectPage.tsx';
 
 export const router = createBrowserRouter([
     {
@@ -10,11 +15,28 @@ export const router = createBrowserRouter([
         children: [
             {
                 path: ROUTES.HOME,
-                Component: App
+                Component: Home
             },
             {
                 path: ROUTES.LOGIN,
                 Component: SignIn
+            },
+            {
+                Component: RequireAuth,
+                children: [
+                    {
+                        path: ROUTES.PROFILE,
+                        Component: ProfilePage
+                    },
+                    {
+                        path: ROUTES.PROJECTS,
+                        Component: ProjectsPage
+                    },
+                    {
+                        path: ROUTES.NEW_PROJECT,
+                        Component: CreateProjectPage
+                    }
+                ]
             }
         ]
     }
