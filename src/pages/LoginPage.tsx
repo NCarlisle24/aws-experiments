@@ -3,8 +3,8 @@ import '@aws-amplify/ui-react/styles.css';
 import { useNavigate } from 'react-router';
 import React from 'react';
 
-import ROUTES from '../routes.ts';
-import { useAuth, AuthStatus } from '../auth/index.ts';
+import { ROUTES } from '../router.ts';
+import { useAuth } from '../auth/index.ts';
 import LargeLoader from '../components/LargeLoader.tsx';
 
 export default function LoginPage() {
@@ -13,7 +13,7 @@ export default function LoginPage() {
     const navigate = useNavigate();
 
     React.useEffect(() => {
-        if (AuthStatus.isEqual(authStatus, AuthStatus.LOGGED_IN)) {
+        if (authContextData.isLoggedIn()) {
             navigate(ROUTES.HOME);
         }
     }, [navigate, authStatus]);

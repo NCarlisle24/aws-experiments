@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { AuthContextData } from './data/AuthContextData.ts';
+import type { AuthContextData } from './AuthContextData.ts';
 import AuthContext from './AuthContext.ts';
 
 type AuthContextProviderProps = {
@@ -8,7 +8,7 @@ type AuthContextProviderProps = {
     authContextData: AuthContextData
 };
 
-export function AuthContextProvider({ children, authContextData }: AuthContextProviderProps) {
+export default function AuthContextProvider({ children, authContextData }: AuthContextProviderProps) {
     return (
         <AuthContext.Provider value={authContextData}>
             {children}

@@ -1,5 +1,5 @@
-import ROUTES from '../routes.ts';
-import { AuthContextData, AuthStatus, useAuth } from '../auth';
+import { ROUTES } from '../router.ts';
+import { AuthContextData, useAuth } from '../auth';
 import ProfileIcon from './ProfileIcon.tsx';
 import NavLink from './NavLink.tsx';
 
@@ -12,7 +12,6 @@ export default function Navbar() {
     const profileMenuRef = React.useRef<HTMLDivElement>(null);
 
     const authContextData: AuthContextData = useAuth();
-    const authStatus = authContextData.getStatus();
 
     const toggleProfileMenuVisibility = () => {
         setProfileMenuVisibility(prev => !prev);
@@ -43,7 +42,7 @@ export default function Navbar() {
             <NavLink dest={ROUTES.HOME}>Home</NavLink>
             <NavLink dest={ROUTES.PROJECTS}>Projects</NavLink>
 
-            {AuthStatus.isEqual(authStatus, AuthStatus.LOGGED_OUT) ?
+            {!authContextData.isLoggedIn() ?
                 <a href={ROUTES.LOGIN}>Sign in</a>
                 : 
                 <>

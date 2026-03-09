@@ -1,7 +1,7 @@
 import { type AuthSession } from 'aws-amplify/auth'
 
-import { AuthStatus, type AmplifyAuthStatus } from './data/AuthStatus';
-import { AuthContextData, MutableAuthContextData } from './data/AuthContextData';
+import { AuthStatus, type AmplifyAuthStatus } from './enums/AuthStatus';
+import { AuthContextData, MutableAuthContextData } from './context';
 import { type UserGroup } from '../../amplify/data/groups';
 
 interface AmplifyCognitoPayload {
@@ -11,7 +11,7 @@ interface AmplifyCognitoPayload {
 }
 
 export class AuthManager {
-    // TODO: get rid of dependency inversion issue here
+    // TODO: get rid of open/closed issue here
     private contextData: MutableAuthContextData = new MutableAuthContextData();
 
     public setStatusFromAmplifyAuthStatus (status: AmplifyAuthStatus) {

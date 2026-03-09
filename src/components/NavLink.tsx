@@ -1,4 +1,4 @@
-import { type Route } from '../routes';
+import { type Route } from '../router.ts';
 import React from 'react';
 
 interface NavLinkProps {

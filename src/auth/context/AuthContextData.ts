@@ -1,4 +1,4 @@
-import { AuthStatus } from "./AuthStatus.ts";
+import { AuthStatus } from "../enums/AuthStatus.ts";
 import { type UserGroup } from "../../../amplify/data/groups.ts";
 
 // data props
@@ -39,6 +39,10 @@ export class AuthContextData {
 
     getStatus() {
         return this.props.status;
+    }
+
+    isLoggedIn() {
+        return AuthStatus.isEqual(this.getStatus(), AuthStatus.LOGGED_IN);
     }
 
     getUserId() {

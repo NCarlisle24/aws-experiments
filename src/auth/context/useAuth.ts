@@ -1,6 +1,6 @@
-import type { AuthContextData } from './data/AuthContextData.ts';
-import { AuthStatus } from './data/AuthStatus.ts';
+import { AuthStatus } from '../enums/AuthStatus.ts';
 import AuthContext from './AuthContext.ts';
+import { AuthContextData } from './AuthContextData.ts';
 
 import React from 'react';
 

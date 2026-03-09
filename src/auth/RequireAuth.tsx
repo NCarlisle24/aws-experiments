@@ -1,14 +1,12 @@
-import useAuth from "./useAuth.ts";
-import { AuthStatus } from "./data/AuthStatus.ts";
-import ROUTES from "../routes.ts";
+import useAuth from "./context/useAuth.ts";
+import { ROUTES } from "../router.ts";
 
 import { Navigate, Outlet } from "react-router-dom";
 
 export default function RequireAuth() {
     const authContextData = useAuth();
-    const authStatus = authContextData.getStatus();
 
-    if (!AuthStatus.isEqual(authStatus, AuthStatus.LOGGED_IN)) {
+    if (!authContextData.isLoggedIn()) {
         return <Navigate to={ROUTES.LOGIN} replace={true}></Navigate>;
     }
 

@@ -2,10 +2,9 @@ import { useAuthenticator } from "@aws-amplify/ui-react";
 import { fetchAuthSession } from 'aws-amplify/auth';
 import React from 'react';
 
-import { AuthStatus } from './data/AuthStatus.ts';
-import { AuthContextProvider } from "./AuthContextProvider.tsx";
+import { AuthStatus } from './enums/AuthStatus.ts';
+import { AuthContextProvider, AuthContextData } from "./context";
 import { AuthManager } from "./AuthManager.ts";
-import { AuthContextData } from "./data/AuthContextData.ts";
 
 import LargeLoader from "../components/LargeLoader.tsx";
 
@@ -40,6 +39,7 @@ export default function AuthBridge({ children }: AuthBridgeProps) {
                 console.error("Error occurred while initializing auth manager (you might be logged out; see below).");
                 console.error(error);
             } finally {
+                // TODO: implement a subscriber system instead of manually rerendering this
                 authManager.triggerRerender();
                 const newContextData = authManager.getContextData();
                 setContextData(newContextData); // trigger a rerender

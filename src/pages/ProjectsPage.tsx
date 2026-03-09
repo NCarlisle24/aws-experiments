@@ -1,5 +1,5 @@
 import { useAuth } from '../auth';
-import ROUTES from '../routes.ts';
+import { ROUTES } from '../router.ts';
 
 export default function ProjectsPage() {
     const authContextData = useAuth();

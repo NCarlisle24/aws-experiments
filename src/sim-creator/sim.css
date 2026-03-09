@@ -1,0 +1,8 @@
+@import 'tailwindcss';
+
+@theme {
+    --color-compartment: #ffffff;
+    --color-compartment-border: #000000;
+    --color-sim-canvas: #d4d4d4;
+    --color-mode-selector-button-selected: #414a54;
+}

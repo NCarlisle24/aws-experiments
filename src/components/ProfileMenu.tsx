@@ -2,7 +2,7 @@ import React, { type CSSProperties } from 'react';
 import { signOut } from 'aws-amplify/auth'; 
 import { useNavigate } from 'react-router';
 
-import ROUTES from '../routes.ts';
+import { ROUTES } from '../router.ts';
 
 interface ProfileMenuProps {
     isVisible: Boolean,
