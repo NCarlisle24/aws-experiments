@@ -1,3 +1,5 @@
+import { Navigate } from 'react-router';
+
 // routes
 
 export const ROUTES = {
@@ -6,8 +8,7 @@ export const ROUTES = {
     PROFILE: '/profile',
     ADMIN: '/admin',
     PROJECTS: '/projects',
-    NEW_PROJECT: '/new-project',
-    SIM_CREATOR: '/edit-sim'
+    SIM_CREATOR: '/edit'
 } as const;
 
 export type Route = typeof ROUTES[keyof typeof ROUTES];
@@ -22,7 +23,6 @@ import Home from './pages/Home.tsx';
 import SignIn from './pages/LoginPage.tsx';
 import ProfilePage from './pages/ProfilePage.tsx';
 import ProjectsPage from './pages/ProjectsPage.tsx';
-import CreateProjectPage from './pages/CreateProjectPage.tsx';
 import SimCreatorPage from './pages/SimCreatorPage.tsx';
 
 export const router = createBrowserRouter([
@@ -48,10 +48,6 @@ export const router = createBrowserRouter([
                         path: ROUTES.PROJECTS,
                         Component: ProjectsPage
                     },
-                    {
-                        path: ROUTES.NEW_PROJECT,
-                        Component: CreateProjectPage
-                    },
                 ]
             }
         ],
@@ -59,10 +55,14 @@ export const router = createBrowserRouter([
     {
         Component: RequireAuth,
             children: [
-            {
-                path: ROUTES.SIM_CREATOR,
-                Component: SimCreatorPage
-            }
-        ]
+                {
+                    path: ROUTES.SIM_CREATOR,
+                    element: <Navigate to={ROUTES.PROJECTS} replace />
+                },
+                {
+                    path: ROUTES.SIM_CREATOR + "/:projectId",
+                    Component: SimCreatorPage
+                }
+            ]
     }
 ]);

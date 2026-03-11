@@ -1,4 +1,4 @@
-import { ROUTES } from '../router.ts';
+import { ROUTES } from '../router.tsx';
 import { AuthContextData, useAuth } from '../auth';
 import ProfileIcon from './ProfileIcon.tsx';
 import NavLink from './NavLink.tsx';

@@ -1,16 +1,11 @@
 import type { Compartment, CompartmentId } from "./Compartment";
 import type { Transition, TransitionId } from "./Transition";
 import * as CompartmentLib from "./Compartment";
+import type { SimModel, SimModelId } from '../../../amplify/data/tables';
 
-export type SimModelId = number;
+export { type SimModel, type SimModelId };
 
-export interface SimModel {
-    readonly id:           SimModelId;
-    readonly compartments: ReadonlyMap<CompartmentId, Compartment>;
-    readonly transitions:  ReadonlyMap<TransitionId, Transition>;
-};
-
-export const create = (id: SimModelId = 0): SimModel => ({
+export const create = (id: SimModelId): SimModel => ({
     id,
     compartments: new Map(),
     transitions: new Map()
@@ -136,8 +131,10 @@ export const updateCompartment = (model: SimModel, id: CompartmentId, updates: P
     const prevCompartment = getCompartmentWithId(model, id);
     if (!prevCompartment) return model;
 
+    const newCompartment = { ...prevCompartment, ...updates };
+
     const newCompartments = new Map(model.compartments);
-    newCompartments.set(prevCompartment.id, { ...prevCompartment, ...updates });
+    newCompartments.set(prevCompartment.id, newCompartment);
 
     return {
         ...model,
@@ -153,7 +150,7 @@ export const print = (model: SimModel): void => {
     }
 
     for (const compartment of model.compartments.values()) {
-        message += `"${compartment.name}" (ID = ${compartment.id}).`;
+        message += `"${compartment.name}" (ID = ${compartment.id}) at (${compartment.x}, ${compartment.y}).`;
 
         if (compartment.transitions.length == 0) {
             message += `\n- (no transitions)`;

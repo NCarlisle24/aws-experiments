@@ -3,7 +3,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // router imports
-import { router } from './router.ts';
+import { router } from './router.tsx';
 import { RouterProvider } from 'react-router-dom';
 
 // auth imports

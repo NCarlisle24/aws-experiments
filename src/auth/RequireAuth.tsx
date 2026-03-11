@@ -1,5 +1,5 @@
 import useAuth from "./context/useAuth.ts";
-import { ROUTES } from "../router.ts";
+import { ROUTES } from "../router.tsx";
 
 import { Navigate, Outlet } from "react-router-dom";
 

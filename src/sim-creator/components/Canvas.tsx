@@ -8,6 +8,7 @@ import { Mode } from "../enums/Mode.ts";
 
 import React from 'react';
 import { Xwrapper } from "react-xarrows";
+import SaveButton from './SaveButton.tsx';
 
 const Canvas = React.forwardRef<CompartmentElement>((_, ref) => {
     // states + refs
@@ -71,6 +72,10 @@ const Canvas = React.forwardRef<CompartmentElement>((_, ref) => {
                     Debug button<br />
                     (mode='{mode}')
             </a>
+
+            <div className="absolute left-5 top-5">
+                <SaveButton />
+            </div>
         </div>
     );
 });

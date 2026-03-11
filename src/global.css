@@ -5,8 +5,10 @@
     --footer-height: 100px;
     --color-primary: #2c6191;
     --color-secondary: #1d232a;
-    --color-tertiary: #2a323c;
-    --color-quaternary: #8dc51a;
+    --color-light-secondary: #273039;
+    --color-tertiary: #2b333d;
+
+    --color-subtitle-on-secondary: #556476;
 }
 
 html, body, #root {

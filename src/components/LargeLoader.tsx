@@ -1,10 +1,17 @@
 import { Loader } from '@aws-amplify/ui-react';
 
-export default function LargeLoader() {
+interface LargeLoaderProps {
+    message?: string
+};
+
+export default function LargeLoader({ message }: LargeLoaderProps) {
 
     return (
-        <div className="h-full flex justify-center items-center px-[30vw]">
-            <Loader variation="linear"></Loader> 
+        <div className="h-full flex flex-col justify-center items-center w-full">
+            {message}
+            <div className="w-[40%]">
+                <Loader variation="linear"></Loader> 
+            </div>
         </div>
     );
 }

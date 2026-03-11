@@ -1,6 +1,9 @@
 import { defineBackend } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
-import { AttributeType, Table, TableV2 } from "aws-cdk-lib/aws-dynamodb";
+import { AttributeType as DynamoAttributeType, Table as DynamoTable, TableV2 as DynamoTableV2 } from "aws-cdk-lib/aws-dynamodb";
+
+import { TABLES } from './data/tables';
+import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 
 /**
  * @see https://docs.amplify.aws/react/build-a-backend/ to add storage, functions, and more
@@ -15,11 +18,26 @@ const customStack = backend.createStack("CustomStackForExternalResources");
 // "By default, TableV2 will create a single table in the main deployment region referred to as the primary table"
 // - https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_dynamodb-readme.html
 
-export const userProjectsTable = new TableV2(
-    customStack, // specifies the cloud formation stack info (i think?), i.e. which region to deploy in
-    "UserProjects",
+const projectsTableInfo = TABLES.userProjects;
+const projectsTableName = projectsTableInfo.externalName;
+
+const projectIdIndex = projectsTableInfo.indexes.projectId;
+const userIdKey = projectsTableInfo.userIdKey;
+const projectIdKey = projectsTableInfo.projectIdKey;
+
+export const userProjectsTable = new DynamoTableV2(
+    customStack, // specifies the cloud formation stack info, i.e. which region to deploy in
+    projectsTableName, // name of the table
     {
-        partitionKey: { name: "project_id", type: AttributeType.STRING }, // basically the primary key
+        partitionKey: userIdKey,
+        sortKey: projectIdKey, // because sort key exists, it acts as the unique identifier here
+        globalSecondaryIndexes: [
+            {
+                indexName: projectIdIndex.name,
+                partitionKey: projectIdIndex.partitionKey,
+                sortKey: projectIdIndex.sortKey
+            }
+        ]
     }
 
     // optionally, can also include secondary indices. A globalSecondaryIndex queries on all data
@@ -38,3 +56,25 @@ export const userProjectsTable = new TableV2(
 
     // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.CoreComponents.html
 );
+
+const authenticatedUserRole = backend.auth.resources.authenticatedUserIamRole;
+
+authenticatedUserRole.addToPrincipalPolicy(new PolicyStatement({
+    actions: [
+        "dynamodb:PutItem",
+        "dynamodb:GetItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:Query",
+        "dynamodb:DeleteItem"
+    ],
+    resources: [
+        userProjectsTable.tableArn,             // grant permission to use base table
+        `${userProjectsTable.tableArn}/index/*` // grant permission to use all indexes
+    ],
+}));
+
+backend.addOutput({
+    custom: {
+        userProjectsTableName: userProjectsTable.tableName
+    }
+})

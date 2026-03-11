@@ -2,12 +2,14 @@ import React from 'react';
 
 import { SimModelLib, CompartmentLib } from './system';
 import { Mode } from './enums/Mode.ts';
+import type { ProjectId } from '../../amplify/data/tables.ts';
 
 export interface SimContextData {
+    readonly projectId: ProjectId;
     readonly model: SimModelLib.SimModel;
     readonly canvasRef: React.RefObject<HTMLDivElement | null>;
     readonly mode: Mode;
-    readonly setModel: React.Dispatch<React.SetStateAction<SimModelLib.SimModel>>;
+    readonly setModel: React.Dispatch<React.SetStateAction<SimModelLib.SimModel | null>>;
     readonly setMode: React.Dispatch<React.SetStateAction<Mode>>;
     readonly createCompartmentDeleteHandler: (id: CompartmentLib.CompartmentId) => (() => any);
     readonly createCompartment: (name: string, x: number, y: number) => any;

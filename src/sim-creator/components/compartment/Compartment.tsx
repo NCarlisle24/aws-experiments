@@ -47,11 +47,15 @@ const Compartment = React.forwardRef<CompartmentElement, CompartmentProps>(({
             const currentMousePos = getMousePos(e);
             const canvasPos = canvasRef.current!.getBoundingClientRect();
 
-            setModel(prev => SimModelLib.updateCompartment(prev, compartment.id, { x, y }));
-
             if (currentMousePos.x < canvasPos.left) {
                 deleteSelf();
+                return;
             }
+
+            setModel(prev => {
+                if (prev === null) return null;
+                return SimModelLib.updateCompartment(prev, compartment.id, { x, y });
+            });
         },
         onDrag: () => {
             updateArrows();

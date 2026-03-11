@@ -1,14 +1,7 @@
 import type { TransitionId } from './Transition.ts';
+import type { Compartment, CompartmentId } from '../../../amplify/data/tables.ts';
 
-export type CompartmentId = number;
-
-export interface Compartment {
-    readonly id:          CompartmentId;
-    readonly name:        string;
-    readonly x:           number;
-    readonly y:           number;
-    readonly transitions: readonly TransitionId[]; // REACT STRICT MODE REQUIRES PURE FUNCTIONS SO I GUESS WE'RE DOING DB NORMALIZATION NOW
-}
+export { type Compartment, type CompartmentId };
 
 export const create = (name: string, x: number, y: number, id: CompartmentId): Compartment => ({
     id,

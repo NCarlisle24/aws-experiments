@@ -3,7 +3,7 @@ import '@aws-amplify/ui-react/styles.css';
 import { useNavigate } from 'react-router';
 import React from 'react';
 
-import { ROUTES } from '../router.ts';
+import { ROUTES } from '../router.tsx';
 import { useAuth } from '../auth/index.ts';
 import LargeLoader from '../components/LargeLoader.tsx';
 

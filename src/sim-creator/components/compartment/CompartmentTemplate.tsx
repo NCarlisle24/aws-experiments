@@ -37,8 +37,13 @@ const CompartmentTemplate = React.forwardRef<HTMLDivElement, CompartmentTemplate
     ref
 ) => {
     const [pos, setPos] = React.useState<Position>({x: initialX ?? 0, y: initialY ?? 0});
+    const posRef = React.useRef<Position>(pos);
 
-    // todo: memoize this click handler
+    React.useEffect(() => {
+        posRef.current = pos;
+    }, [pos])
+
+    // todo: memoize this click handler?
     const handleLeftMouseDown = (e: React.MouseEvent) => {
         if (onPickup) onPickup(e.nativeEvent);
 
@@ -61,7 +66,7 @@ const CompartmentTemplate = React.forwardRef<HTMLDivElement, CompartmentTemplate
             window.removeEventListener('mouseup', handleLeftMouseUp);
             window.removeEventListener('mousemove', handleMouseMove);
 
-            if (onRelease) onRelease(e, pos.x, pos.y, setPos);
+            if (onRelease) onRelease(e, posRef.current.x, posRef.current.y, setPos);
         }
 
         window.addEventListener('mousemove', handleMouseMove);
