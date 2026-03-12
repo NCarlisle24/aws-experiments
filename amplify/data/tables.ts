@@ -47,7 +47,7 @@ export const ZodParsedSimModel = ZodDbSimModel.transform(data => ({
 export const ZodProject = z.object({
     project_id: z.string().readonly(),
     user_id: z.string().readonly(),
-    name: z.string().nonempty().readonly(),
+    projectName: z.string().nonempty().readonly(),
     createdAt: z.string().readonly(),
     lastModifiedAt: z.string().readonly(),
     model: ZodParsedSimModel.readonly()

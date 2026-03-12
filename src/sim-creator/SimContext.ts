@@ -2,10 +2,11 @@ import React from 'react';
 
 import { SimModelLib, CompartmentLib } from './system';
 import { Mode } from './enums/Mode.ts';
-import type { ProjectId } from '../../amplify/data/tables.ts';
+import type { Project, ProjectId } from '../../amplify/data/tables.ts';
 
 export interface SimContextData {
     readonly projectId: ProjectId;
+    readonly projectName: Project["projectName"];
     readonly model: SimModelLib.SimModel;
     readonly canvasRef: React.RefObject<HTMLDivElement | null>;
     readonly mode: Mode;

@@ -1,6 +1,6 @@
 import { AuthContextData } from '../auth';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, QueryCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, QueryCommand, PutCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { fetchAuthSession } from 'aws-amplify/auth';
 import { v4 as uuid } from 'uuid';
 import * as z from "zod";
@@ -115,7 +115,7 @@ const restApi = (() => {
 
             // other attributes
 
-            name: "Untitled project",
+            projectName: "Untitled project",
             createdAt: timeCreated,
             lastModifiedAt: timeCreated,
             model: ZodDbSimModel.parse(convertSimModelToDbSimModel(SimModelLib.create(projectId)))
@@ -137,6 +137,28 @@ const restApi = (() => {
             }
 
             return "";
+        }
+    }
+
+    const deleteUserProject = async (authContextData: AuthContextData, projectId: ProjectId) => {
+        if (!authContextData.isLoggedIn()) return;
+
+        const client = await createClient();
+
+        const projectsTableInfo = TABLES.userProjects;
+
+        const command = new DeleteCommand({
+            TableName: PROJECTS_TABLE_NAME,
+            Key: {
+                [projectsTableInfo.projectIdKey.name]: projectId,
+                [projectsTableInfo.userIdKey.name]: authContextData.getUserId(),
+            }
+        });
+
+        try {
+            return await client.send(command);
+        } catch (e) {
+            console.error("Error occurred while deleting project:", e);
         }
     }
 
@@ -174,11 +196,41 @@ const restApi = (() => {
         }
     }
 
+    const setProjectName = async (authContextData: AuthContextData, projectId: ProjectId, newName: Project["projectName"]) => {
+        if (!authContextData.isLoggedIn()) return;
+
+        const client = await createClient();
+        const projectsTableInfo = TABLES.userProjects;
+        const timeModified = new Date().toString();
+
+        try {
+            const command = new UpdateCommand({
+                TableName: PROJECTS_TABLE_NAME,
+                Key: {
+                    [projectsTableInfo.projectIdKey.name]: projectId,
+                    [projectsTableInfo.userIdKey.name]: authContextData.getUserId()
+                },
+                UpdateExpression: "set projectName = :newName, lastModifiedAt = :lastModified",
+                ExpressionAttributeValues: {
+                    ":newName": newName,
+                    ":lastModified": timeModified
+                },
+            });
+
+            await client.send(command);
+
+        } catch (error) {
+            console.error("Error occurred while changed project name:", error);
+        }
+    }
+
     return {
         getUserProjects,
         getUserProject,
         createUserProject,
-        setProjectModel
+        deleteUserProject,
+        setProjectModel,
+        setProjectName
     };
 })();
 

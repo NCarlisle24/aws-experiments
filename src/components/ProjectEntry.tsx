@@ -5,10 +5,11 @@ import DeleteProjectButton from "./DeleteProjectButton";
 import React from 'react';
 
 interface ProjectEntryProps {
-    project: Project
+    project: Project,
+    onDelete: () => any
 };
 
-export default function ProjectEntry({ project }: ProjectEntryProps) {
+export default function ProjectEntry({ project, onDelete }: ProjectEntryProps) {
     const [isDeleting, setIsDeleting] = React.useState<boolean>(false);
 
     const cursor = isDeleting ? "wait" : "pointer";
@@ -19,13 +20,14 @@ export default function ProjectEntry({ project }: ProjectEntryProps) {
                style={{ cursor }}
                href={isDeleting ? undefined : ROUTES.SIM_CREATOR + "/" + project.project_id}>
                 <div className="flex flex-col justify-start">
-                    <div className="text-xl font-bold">{project.name}</div>
+                    <div className="text-xl font-bold">{isDeleting ? "Deleting: " + project.projectName : project.projectName}</div>
                     <div className="text-subtitle-on-secondary">{project.project_id}</div>
                     <div className="text-subtitle-on-secondary">Last modified: {project.lastModifiedAt}</div>
                 </div>
             </a>
             <div className="absolute flex flex-col justify-center top-4 right-4">
-                <DeleteProjectButton project={project} onDelete={() => setIsDeleting(true)}/>
+                <DeleteProjectButton project={project} onDelete={() => setIsDeleting(true)} 
+                                     afterDelete={ () => { setIsDeleting(false); onDelete(); } }/>
             </div>
         </div>
     );

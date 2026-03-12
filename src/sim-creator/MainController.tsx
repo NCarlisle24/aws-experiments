@@ -3,17 +3,20 @@ import { useParams } from 'react-router-dom';
 
 import Toolbox from './components/toolbox/Toolbox.tsx';
 import Canvas from './components/Canvas.tsx';
+import SimCreatorNavbar from './components/Navbar.tsx';
 import { type CompartmentProps } from './components/compartment/Compartment.tsx';
 import { SimModelLib, CompartmentLib, TransitionLib } from './system';
 import { SimContext, type SimContextData } from './SimContext';
 import { Mode } from './enums/Mode.ts';
 import restApi from '../rest-api/restApi.ts';
 import { useAuth } from '../auth/index.ts';
+import { type Project } from '../../amplify/data/tables.ts';
 
 import './sim.css';
 import LargeLoader from '../components/LargeLoader.tsx';
 
 export default function MainController() {
+    const [projectName, setProjectName] = React.useState<Project["projectName"] | null>(null);
     const [model, setModel] = React.useState<SimModelLib.SimModel | null>(null)
     const [mode, setMode] = React.useState<Mode>(Mode.DEFAULT);
     const canvasRef: SimContextData["canvasRef"] = React.useRef(null);
@@ -68,26 +71,28 @@ export default function MainController() {
             }
 
             setModel(project.model);
+            setProjectName(project.projectName);
         })();
     }, []);
 
-    if (model === null) {
+    if (model === null || projectName === null) {
         return <LargeLoader message="Loading project..."/>;
     }
 
     return (
-        <main className="grid grid-cols-2 h-full w-full" style={{ gridTemplateColumns: "1fr 3fr" }}>
-            <SimContext.Provider value={{model, mode, canvasRef, setModel, setMode, createCompartmentDeleteHandler, 
-                                        createCompartment, createTransition, transitionCreatorStart, 
-                                        projectId: safeProjectId, transitionCreatorEnd, setTransitionCreatorEnd, 
-                                        setTransitionCreatorStart}}>
-                <div className="bg-tertiary col-start-1 col-span-1">
-                    <Toolbox></Toolbox>
-                </div>
-                <div className="col-start-2 col-span-1 bg-sim-canvas">
-                    <Canvas ref={canvasRef}></Canvas>
-                </div>
-            </SimContext.Provider>
-        </main>
-    )
+        <SimContext.Provider value={{model, mode, canvasRef, setModel, setMode, createCompartmentDeleteHandler, 
+                                    createCompartment, createTransition, transitionCreatorStart, 
+                                    projectId: safeProjectId, projectName, transitionCreatorEnd, 
+                                    setTransitionCreatorEnd, setTransitionCreatorStart}}>
+            <SimCreatorNavbar />
+            <main className="grid grid-cols-2 h-full w-full" style={{ gridTemplateColumns: "1fr 3fr" }}>
+                    <div className="bg-tertiary col-start-1 col-span-1">
+                        <Toolbox></Toolbox>
+                    </div>
+                    <div className="col-start-2 col-span-1 bg-sim-canvas">
+                        <Canvas ref={canvasRef}></Canvas>
+                    </div>
+            </main>
+        </SimContext.Provider>
+)
 }
