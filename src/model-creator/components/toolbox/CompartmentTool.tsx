@@ -1,4 +1,4 @@
-import { useSimCreator } from "../../SimContext";
+import { useModelCreator } from "../../ModelCreatorContext";
 import CompartmentTemplate, { type CompartmentTemplateProps } from '../compartment/CompartmentTemplate';
 import { getMousePos } from "../compartment/CompartmentUtils";
 import { Mode } from "../../enums/Mode";
@@ -10,7 +10,7 @@ interface CompartmentToolProps {
 };
 
 export default function CompartmentTool({ name }: CompartmentToolProps) {
-    const { canvasRef, createCompartment, mode, setMode } = useSimCreator();
+    const { canvasRef, createCompartment, mode, setMode } = useModelCreator();
     const compartmentCreatorRef = React.useRef<HTMLDivElement>(null);
 
     let cursor = "grab";

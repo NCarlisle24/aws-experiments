@@ -1,12 +1,12 @@
 import CompartmentTool from "./CompartmentTool";
-import { useSimCreator } from "../../SimContext";
+import { useModelCreator } from "../../ModelCreatorContext";
 import { Mode } from "../../enums/Mode";
 
 import React from 'react';
 import ModeSelectorBar from "./ModeSelectorBar";
 
 export default function Toolbox() {
-    const { mode } = useSimCreator();
+    const { mode } = useModelCreator();
 
     let cursor = "default";
     if (Mode.isEqual(mode, Mode.CREATE_COMPARTMENT) || Mode.isEqual(mode, Mode.MOVE_COMPARTMENT)) {

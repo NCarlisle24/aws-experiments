@@ -7,8 +7,8 @@ export const ROUTES = {
     LOGIN: '/login',
     PROFILE: '/profile',
     ADMIN: '/admin',
-    PROJECTS: '/projects',
-    SIM_CREATOR: '/edit'
+    USER_MODELS: '/models',
+    MODEL_CREATOR: '/edit'
 } as const;
 
 export type Route = typeof ROUTES[keyof typeof ROUTES];
@@ -22,8 +22,8 @@ import MainLayout from './MainLayout.tsx';
 import Home from './pages/Home.tsx';
 import SignIn from './pages/LoginPage.tsx';
 import ProfilePage from './pages/ProfilePage.tsx';
-import ProjectsPage from './pages/ProjectsPage.tsx';
-import SimCreatorPage from './pages/SimCreatorPage.tsx';
+import UserModelsPage from './pages/UserModelsPage.tsx';
+import ModelCreatorPage from './pages/ModelCreatorPage.tsx';
 
 export const router = createBrowserRouter([
     {
@@ -45,8 +45,8 @@ export const router = createBrowserRouter([
                         Component: ProfilePage
                     },
                     {
-                        path: ROUTES.PROJECTS,
-                        Component: ProjectsPage
+                        path: ROUTES.USER_MODELS,
+                        Component: UserModelsPage
                     },
                 ]
             }
@@ -56,12 +56,12 @@ export const router = createBrowserRouter([
         Component: RequireAuth,
             children: [
                 {
-                    path: ROUTES.SIM_CREATOR,
-                    element: <Navigate to={ROUTES.PROJECTS} replace />
+                    path: ROUTES.MODEL_CREATOR,
+                    element: <Navigate to={ROUTES.USER_MODELS} replace />
                 },
                 {
-                    path: ROUTES.SIM_CREATOR + "/:projectId",
-                    Component: SimCreatorPage
+                    path: ROUTES.MODEL_CREATOR + "/:modelId",
+                    Component: ModelCreatorPage
                 }
             ]
     }

@@ -2,9 +2,9 @@ import React from 'react';
 import { useXarrow } from 'react-xarrows';
 
 import CompartmentTemplate, { type CompartmentTemplateProps } from './CompartmentTemplate';
-import { useSimCreator } from '../../SimContext';
+import { useModelCreator } from '../../ModelCreatorContext';
 import { getMousePos } from './CompartmentUtils';
-import { CompartmentLib, SimModelLib } from '../../system';
+import { CompartmentLib } from '../../system';
 import { Mode } from '../../enums/Mode';
 
 export type CompartmentElement = HTMLDivElement;
@@ -19,8 +19,8 @@ const Compartment = React.forwardRef<CompartmentElement, CompartmentProps>(({
     deleteSelf, 
 }: CompartmentProps, ref) => {
     const updateArrows = useXarrow();
-    const { canvasRef, mode, setMode, setModel, transitionCreatorStart, setTransitionCreatorStart, 
-            setTransitionCreatorEnd } = useSimCreator();
+    const { canvasRef, mode, setMode, transitionCreatorStart, setTransitionCreatorStart, 
+            setTransitionCreatorEnd, updateCompartment, resetFocus, addToFocus } = useModelCreator();
 
     let cursor = "grab";
     if (Mode.isEqual(mode, Mode.MOVE_COMPARTMENT) || Mode.isEqual(mode, Mode.CREATE_COMPARTMENT)) {
@@ -34,12 +34,16 @@ const Compartment = React.forwardRef<CompartmentElement, CompartmentProps>(({
         name: compartment.name,
         initialX: compartment.x,
         initialY: compartment.y,
+        isInFocus: compartment.isInFocus,
         style: {
             position: "absolute",
             cursor
         },
         onPickup: () => {
             setMode(Mode.MOVE_COMPARTMENT);
+
+            resetFocus();
+            addToFocus(compartment);
         },
         onRelease: (e, x, y) => {
             setMode(Mode.SELECT);
@@ -52,10 +56,7 @@ const Compartment = React.forwardRef<CompartmentElement, CompartmentProps>(({
                 return;
             }
 
-            setModel(prev => {
-                if (prev === null) return null;
-                return SimModelLib.updateCompartment(prev, compartment.id, { x, y });
-            });
+            updateCompartment(compartment.id, { x, y });
         },
         onDrag: () => {
             updateArrows();
@@ -65,6 +66,7 @@ const Compartment = React.forwardRef<CompartmentElement, CompartmentProps>(({
         name: compartment.name,
         initialX: compartment.x,
         initialY: compartment.y,
+        isInFocus: compartment.isInFocus,
         style: {
             position: "absolute",
             cursor

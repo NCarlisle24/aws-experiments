@@ -18,24 +18,23 @@ const customStack = backend.createStack("CustomStackForExternalResources");
 // "By default, TableV2 will create a single table in the main deployment region referred to as the primary table"
 // - https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_dynamodb-readme.html
 
-const projectsTableInfo = TABLES.userProjects;
-const projectsTableName = projectsTableInfo.externalName;
+const modelsTableInfo = TABLES.userModels;
+const modelsTableName = modelsTableInfo.externalName;
+const modelIdIndex = modelsTableInfo.indexes.modelId;
+const userIdKey = modelsTableInfo.userIdKey;
+const modelIdKey = modelsTableInfo.modelIdKey;
 
-const projectIdIndex = projectsTableInfo.indexes.projectId;
-const userIdKey = projectsTableInfo.userIdKey;
-const projectIdKey = projectsTableInfo.projectIdKey;
-
-export const userProjectsTable = new DynamoTableV2(
+export const userModelsTable = new DynamoTableV2(
     customStack, // specifies the cloud formation stack info, i.e. which region to deploy in
-    projectsTableName, // name of the table
+    modelsTableName, // name of the table
     {
         partitionKey: userIdKey,
-        sortKey: projectIdKey, // because sort key exists, it acts as the unique identifier here
+        sortKey: modelIdKey, // because sort key exists, it acts as the unique identifier here
         globalSecondaryIndexes: [
             {
-                indexName: projectIdIndex.name,
-                partitionKey: projectIdIndex.partitionKey,
-                sortKey: projectIdIndex.sortKey
+                indexName: modelIdIndex.name,
+                partitionKey: modelIdIndex.partitionKey,
+                sortKey: modelIdIndex.sortKey
             }
         ]
     }
@@ -68,13 +67,13 @@ authenticatedUserRole.addToPrincipalPolicy(new PolicyStatement({
         "dynamodb:DeleteItem"
     ],
     resources: [
-        userProjectsTable.tableArn,             // grant permission to use base table
-        `${userProjectsTable.tableArn}/index/*` // grant permission to use all indexes
+        userModelsTable.tableArn,             // grant permission to use base table
+        `${userModelsTable.tableArn}/index/*` // grant permission to use all indexes
     ],
 }));
 
 backend.addOutput({
     custom: {
-        userProjectsTableName: userProjectsTable.tableName
+        userModelsTableName: userModelsTable.tableName
     }
 })

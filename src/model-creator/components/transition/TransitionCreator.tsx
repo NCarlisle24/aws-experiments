@@ -1,5 +1,5 @@
 import { type CompartmentElement } from "../compartment/Compartment";
-import { useSimCreator } from "../../SimContext";
+import { useModelCreator } from "../../ModelCreatorContext";
 import { Mode } from "../../enums/Mode";
 
 import Xarrow, { useXarrow } from "react-xarrows";
@@ -12,7 +12,7 @@ export interface TempTransitionProps {
 
 export default function TransitionCreator({ start, end }: TempTransitionProps) {
     const { mode, canvasRef, transitionCreatorStart, transitionCreatorEnd, 
-            setTransitionCreatorStart, setTransitionCreatorEnd, createTransition } = useSimCreator();
+            setTransitionCreatorStart, setTransitionCreatorEnd, createTransition } = useModelCreator();
     const [mousePos, setMousePos] = React.useState<{x: number, y: number} | null>(null);
     const mouseTargetRef = React.useRef<HTMLDivElement>(null);
     const updateArrows = useXarrow();

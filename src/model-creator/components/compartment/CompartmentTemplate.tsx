@@ -10,6 +10,7 @@ export interface CompartmentTemplateProps {
     initialX?: number;
     initialY?: number;
     style?: CSSProperties;
+    isInFocus?: boolean;
     onPickup?: (e: MouseEvent) => any;
     onDrag?: (e: MouseEvent) => any;
     onRelease?: (e: MouseEvent, x: number, y: number, setPos: React.Dispatch<React.SetStateAction<Position>>) => any;
@@ -27,6 +28,7 @@ const CompartmentTemplate = React.forwardRef<HTMLDivElement, CompartmentTemplate
         initialX, 
         initialY, 
         style, 
+        isInFocus,
         onPickup, 
         onDrag, 
         onRelease, 
@@ -73,8 +75,18 @@ const CompartmentTemplate = React.forwardRef<HTMLDivElement, CompartmentTemplate
         window.addEventListener('mouseup', handleLeftMouseUp);
     }
 
+    const shadowStyle: React.CSSProperties = isInFocus ? {
+        boxShadow: "0px 0px 10px rgba(0, 0, 100, 0.5)",
+    } : {};
+
     return (
-        <div style={{ ...DEFAULT_COMPARTMENT_STYLE, left: pos.x, top: pos.y, ...style }} 
+        <div style={{ 
+                ...DEFAULT_COMPARTMENT_STYLE, 
+                left: pos.x, 
+                top: pos.y, 
+                ...shadowStyle,
+                ...style 
+            }} 
              onMouseDown={handleLeftMouseDown} ref={ref} onMouseUp={onMouseUp} onMouseEnter={onMouseEnter}
              onMouseLeave={onMouseLeave}>
             {name}

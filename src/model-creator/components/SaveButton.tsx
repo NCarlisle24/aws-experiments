@@ -1,13 +1,13 @@
 import { Loader } from '@aws-amplify/ui-react';
 import React from 'react';
 import restApi from '../../rest-api';
-import { useSimCreator } from '../SimContext';
+import { useModelCreator } from '../ModelCreatorContext';
 import { useAuth } from '../../auth';
 
 export default function SaveButton() {
     const [isSaving, setIsSaving] = React.useState<boolean>(false);
 
-    const { model, projectId } = useSimCreator();
+    const { model } = useModelCreator();
     const authContextData = useAuth();
 
     const cursor = isSaving ? "" : "pointer";
@@ -15,7 +15,7 @@ export default function SaveButton() {
     const handleClick = async () => {
         if (!isSaving) {
             setIsSaving(true);
-            await restApi.setProjectModel(authContextData, projectId, model);
+            await restApi.updateUserModel(authContextData, model);
             setIsSaving(false);
         }
     }

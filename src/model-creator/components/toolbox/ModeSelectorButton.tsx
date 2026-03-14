@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { useSimCreator } from '../../SimContext';
+import { useModelCreator } from '../../ModelCreatorContext';
 import { Mode } from '../../enums/Mode';
 
 interface ModeSelectorButtonProps {
@@ -10,7 +10,7 @@ interface ModeSelectorButtonProps {
 }
 
 export default function ModeSelectorButton({ mode, activeModes, children }: ModeSelectorButtonProps) {
-    const { mode: currentMode, setMode } = useSimCreator();
+    const { mode: currentMode, setMode } = useModelCreator();
 
     let isActive = false;
     for (const activeMode of activeModes) {

@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Project } from '../../amplify/data/tables';
+import type { Model } from '../../amplify/data/tables';
 import { useAuth } from '../auth';
 import restApi from '../rest-api';
 import { Loader } from '@aws-amplify/ui-react';
@@ -19,14 +19,13 @@ function DeleteButton({ onClick, children, style }: DeleteButtonProps) {
     );
 }
 
-
-interface DeleteProjectButtonProps {
-    project: Project,
+interface DeleteModelButtonProps {
+    model: Model,
     onDelete?: () => any,
     afterDelete?: () => any
 }
 
-export default function DeleteProjectButton({ project, onDelete, afterDelete }: DeleteProjectButtonProps) {
+export default function DeleteModelButton({ model, onDelete, afterDelete }: DeleteModelButtonProps) {
     const [isDeleting, setIsDeleting] = React.useState<boolean>(false);
     const [isConfirming, setIsConfirming] = React.useState<boolean>(false);
     const confirmationMenuRef = React.useRef<HTMLDivElement>(null);
@@ -57,13 +56,13 @@ export default function DeleteProjectButton({ project, onDelete, afterDelete }: 
         return () => window.removeEventListener('click', checkForClickOutsideOfConfirmationMenu);
     }, [hideConfirmationMenu]);
 
-    const deleteProject = async () => {
+    const deleteModel = async () => {
         setIsConfirming(false);
         setIsDeleting(true);
 
         if (onDelete) onDelete();
 
-        await restApi.deleteUserProject(authContextData, project.project_id);
+        await restApi.deleteUserModel(authContextData, model.id);
         
         if (afterDelete) afterDelete();
     }
@@ -74,13 +73,13 @@ export default function DeleteProjectButton({ project, onDelete, afterDelete }: 
             <div className="w-screen h-screen fixed top-0 left-0 z-2048 backdrop-blur-xs flex 
                             items-center justify-center cursor-default">
                 <div className="p-3 bg-light-secondary rounded-md h-25 flex flex-col shadow-lg" ref={confirmationMenuRef}>
-                    Are you sure you want to delete "{project.projectName}"?
+                    Are you sure you want to delete "{model.modelName}"?
                     <div className="mt-auto flex gap-2 self-end">
                         <div className="p-2 rounded-sm bg-secondary hover:bg-light-secondary text-center cursor-pointer"
                                 onClick={hideConfirmationMenu}>
                             Cancel
                         </div>
-                        <DeleteButton onClick={deleteProject}>Delete</DeleteButton>
+                        <DeleteButton onClick={deleteModel}>Delete</DeleteButton>
                     </div>
                 </div>
             </div>

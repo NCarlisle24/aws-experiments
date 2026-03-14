@@ -5,13 +5,13 @@ import { fetchAuthSession } from 'aws-amplify/auth';
 import { v4 as uuid } from 'uuid';
 import * as z from "zod";
 
-import { TABLES, ZodProject, type Project, type ProjectId, type SimModel,
-         ZodDbSimModel, convertSimModelToDbSimModel } from '../../amplify/data/tables';
+import { TABLES, ZodDbModel, type DbModel, type ModelId, 
+         userIdKeyName, modelIdKeyName} from '../../amplify/data/tables';
+import { type Model, ModelLib } from '../model-creator';
 
 import outputs from '../../amplify_outputs.json';
-import { SimModelLib } from '../sim-creator/system';
 
-const PROJECTS_TABLE_NAME = outputs.custom.userProjectsTableName;
+const MODELS_TABLE_NAME = outputs.custom.userModelsTableName;
 
 // TODO: cache the client instead of recreating it every request
 const createClient = async () => {
@@ -32,7 +32,7 @@ const createClient = async () => {
 }
 
 const restApi = (() => {
-    const getUserProject = async (authContextData: AuthContextData, projectId: string) => {
+    const getUserModel = async (authContextData: AuthContextData, modelId: string): Promise<Model | null> => {
         if (!authContextData.isLoggedIn()) {
             return null;
         }
@@ -40,197 +40,183 @@ const restApi = (() => {
         const client = await createClient();
         const userId = authContextData.getUserId();
 
-        const projectsTableInfo = TABLES.userProjects;
+        const modelsTableInfo = TABLES.userModels;
 
         const command = new GetCommand({
-            TableName: PROJECTS_TABLE_NAME,
+            TableName: MODELS_TABLE_NAME,
             Key: {
-                [projectsTableInfo.projectIdKey.name]: projectId,
-                [projectsTableInfo.userIdKey.name]: userId
+                [modelsTableInfo.modelIdKey.name]: modelId,
+                [modelsTableInfo.userIdKey.name]: userId
             }
         });
 
         try {
-            const project = (await client.send(command)).Item;
-            return ZodProject.parse(project);
+            const dbModel = ZodDbModel.parse((await client.send(command)).Item);
+            return ModelLib.convertFromDbModel(dbModel);
         } catch (error) {
             if (error instanceof z.ZodError) {
-                console.error("Fetched projects is not valid:", error);
+                console.error("Fetched models are not valid:", error);
             } else {
-                console.error("Error while validating user project:", error);
+                console.error("Error while validating user model:", error);
             }
 
             return null;
         }
     }
 
-    const getUserProjects = async (authContextData: AuthContextData): Promise<Project[] | null> => {
+    const getUserModels = async (authContextData: AuthContextData): Promise<Model[] | null> => {
         if (!authContextData.isLoggedIn()) {
             return null;
         }
 
         const client = await createClient();
         const userId = authContextData.getUserId();
-        const projectsTableInfo = TABLES.userProjects;
-        const projectsTableUserIdName = projectsTableInfo.userIdKey.name;
+        const modelsTableInfo = TABLES.userModels;
+        const modelsTableUserIdName = modelsTableInfo.userIdKey.name;
 
         const command = new QueryCommand({
-            TableName: PROJECTS_TABLE_NAME,
-            KeyConditionExpression: projectsTableUserIdName + " = :u",
+            TableName: MODELS_TABLE_NAME,
+            KeyConditionExpression: modelsTableUserIdName + " = :u",
             ExpressionAttributeValues: {
                 ":u": userId
             }
         });
 
         try {
-            const projects = await client.send(command);
-            return z.array(ZodProject).parse(projects.Items ?? []);
+            const dbModels = await client.send(command);
+            const parsedModels = z.array(ZodDbModel).parse(dbModels.Items ?? []);
+            return parsedModels.map(dbModel => ModelLib.convertFromDbModel(dbModel));
         } catch (error) {
             if (error instanceof z.ZodError) {
-                console.error("Fetched projects are not valid:", error);
+                console.error("Fetched models are not valid:", error);
             } else {
-                console.error("Error while fetching user projects:", error);
+                console.error("Error while fetching user models:", error);
             }
 
             return null;
         }
     }
 
-    const createUserProject = async (authContextData: AuthContextData) => {
+    const createUserModel = async (authContextData: AuthContextData, model?: Model) => {
         if (!authContextData.isLoggedIn()) return;
 
         const client = await createClient();
-        const projectId = uuid();
+        
+        let newModel: DbModel;
 
-        const projectsTableInfo = TABLES.userProjects;
+        if (model) {
+            newModel = ModelLib.convertToDbModel(model);
+        } else {
+            const modelId = uuid(); // creates a randomized ID
+            const timeCreated = new Date().toString();
 
-        const timeCreated = new Date().toString();
+            newModel = {
+                // required attributes (must match backend config)
 
-        const newProject = {
+                [modelIdKeyName]: modelId,
+                [userIdKeyName]: authContextData.getUserId(),
 
-            // required attributes (must match backend config)
+                // other attributes
 
-            [projectsTableInfo.projectIdKey.name]: projectId,
-            [projectsTableInfo.userIdKey.name]: authContextData.getUserId(),
-
-            // other attributes
-
-            projectName: "Untitled project",
-            createdAt: timeCreated,
-            lastModifiedAt: timeCreated,
-            model: ZodDbSimModel.parse(convertSimModelToDbSimModel(SimModelLib.create(projectId)))
-        };
+                compartments: [],
+                transitions: [],
+                modelName: "Untitled model",
+                createdAt: timeCreated,
+                lastModifiedAt: timeCreated,
+            };
+        }
 
         try {
             const command = new PutCommand({
-                TableName: PROJECTS_TABLE_NAME,
-                Item: ZodProject.parse(newProject)
+                TableName: MODELS_TABLE_NAME,
+                Item: ZodDbModel.parse(newModel)
             });
 
             await client.send(command);
-            return projectId;
+            return newModel.id;
         } catch (error) {
             if (error instanceof z.ZodError) {
-                console.error("Created project does not match interface:", error);
+                console.error("Created model does not match interface:", error);
             } else {
-                console.error("Error while uploading project:", error);
+                console.error("Error while uploading model:", error);
             }
 
             return "";
         }
     }
 
-    const deleteUserProject = async (authContextData: AuthContextData, projectId: ProjectId) => {
+    const deleteUserModel = async (authContextData: AuthContextData, modelId: ModelId) => {
         if (!authContextData.isLoggedIn()) return;
 
         const client = await createClient();
 
-        const projectsTableInfo = TABLES.userProjects;
+        const modelsTableInfo = TABLES.userModels;
 
         const command = new DeleteCommand({
-            TableName: PROJECTS_TABLE_NAME,
+            TableName: MODELS_TABLE_NAME,
             Key: {
-                [projectsTableInfo.projectIdKey.name]: projectId,
-                [projectsTableInfo.userIdKey.name]: authContextData.getUserId(),
+                [modelsTableInfo.modelIdKey.name]: modelId,
+                [modelsTableInfo.userIdKey.name]: authContextData.getUserId(),
             }
         });
 
         try {
             return await client.send(command);
         } catch (e) {
-            console.error("Error occurred while deleting project:", e);
+            console.error("Error occurred while deleting model:", e);
         }
     }
 
-    const setProjectModel = async (authContextData: AuthContextData, projectId: ProjectId, newModel: SimModel) => {
+    const updateUserModel = async (authContextData: AuthContextData, model: Model) => {
         if (!authContextData.isLoggedIn()) return;
 
-        const client = await createClient();
-        const newDbModel = convertSimModelToDbSimModel(newModel);
-
-        const projectsTableInfo = TABLES.userProjects;
         const timeModified = new Date().toString();
 
+        // TODO: update only select parts of the model rather than re-uploading the whole thing
+
         try {
-            const command = new UpdateCommand({
-                TableName: PROJECTS_TABLE_NAME,
-                Key: {
-                    [projectsTableInfo.projectIdKey.name]: projectId,
-                    [projectsTableInfo.userIdKey.name]: authContextData.getUserId()
-                },
-                UpdateExpression: "set model = :model, lastModifiedAt = :lastModified",
-                ExpressionAttributeValues: {
-                    ":model": ZodDbSimModel.parse(newDbModel),
-                    ":lastModified": timeModified
-                },
-            });
-
-            await client.send(command);
-
+            await deleteUserModel(authContextData, model.id);
+            await createUserModel(authContextData, { ...model, lastModifiedAt: timeModified });
         } catch (error) {
-            if (error instanceof z.ZodError) {
-                console.error("New model is invalid:", error);
-            } else {
-                console.error("Error occurred while setting project model:", error);
-            }
+            console.error("Error occurred while updating model:", error);
         }
     }
 
-    const setProjectName = async (authContextData: AuthContextData, projectId: ProjectId, newName: Project["projectName"]) => {
+    const setUserModelName = async (authContextData: AuthContextData, modelId: ModelId, newName: Model["modelName"]) => {
         if (!authContextData.isLoggedIn()) return;
 
         const client = await createClient();
-        const projectsTableInfo = TABLES.userProjects;
+        const modelsTableInfo = TABLES.userModels;
         const timeModified = new Date().toString();
 
         try {
             const command = new UpdateCommand({
-                TableName: PROJECTS_TABLE_NAME,
+                TableName: MODELS_TABLE_NAME,
                 Key: {
-                    [projectsTableInfo.projectIdKey.name]: projectId,
-                    [projectsTableInfo.userIdKey.name]: authContextData.getUserId()
+                    [modelsTableInfo.modelIdKey.name]: modelId,
+                    [modelsTableInfo.userIdKey.name]: authContextData.getUserId()
                 },
-                UpdateExpression: "set projectName = :newName, lastModifiedAt = :lastModified",
+                UpdateExpression: "set modelName = :newName, lastModifiedAt = :lastModifiedAt",
                 ExpressionAttributeValues: {
                     ":newName": newName,
-                    ":lastModified": timeModified
+                    ":lastModifiedAt": timeModified
                 },
             });
 
             await client.send(command);
 
         } catch (error) {
-            console.error("Error occurred while changed project name:", error);
+            console.error("Error occurred while changed model name:", error);
         }
     }
 
     return {
-        getUserProjects,
-        getUserProject,
-        createUserProject,
-        deleteUserProject,
-        setProjectModel,
-        setProjectName
+        getUserModel,
+        getUserModels,
+        createUserModel,
+        deleteUserModel,
+        updateUserModel,
+        setUserModelName
     };
 })();
 
