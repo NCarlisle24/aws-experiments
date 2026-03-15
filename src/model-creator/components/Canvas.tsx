@@ -1,10 +1,10 @@
-import { ModelLib, CompartmentLib } from '../system/index.ts';
-
 import Compartment, { type CompartmentElement } from "./compartment/Compartment.tsx";
 import Transition from "./transition/Transition.tsx";
 import TransitionCreator from './transition/TransitionCreator.tsx';
 import { useModelCreator, type ModelCreatorContextData } from "../ModelCreatorContext.ts";
 import { Mode } from "../enums/Mode.ts";
+import { ModelComponentLib } from '../system';
+
 
 import React from 'react';
 import { Xwrapper } from "react-xarrows";
@@ -12,11 +12,11 @@ import SaveButton from './SaveButton.tsx';
 
 const contextDataSelector = (data: ModelCreatorContextData) => ({
     mode:                           data.mode,
-    focus:                          data.focus,
-    model:                          data.model!,
-    createCompartmentDeleteHandler: data.createCompartmentDeleteHandler,
+    compartmentIds:                 [...data.model!.compartments.keys()],
+    transitionIds:                  [...data.model!.transitions.keys()],
     transitionCreatorStart:         data.transitionCreatorStart,
-    transitionCreatorEnd:           data.transitionCreatorEnd
+    transitionCreatorEnd:           data.transitionCreatorEnd,
+    deleteCompartment:              data.deleteCompartment,
 });
 
 const Canvas = React.forwardRef<CompartmentElement>((_, ref) => {
@@ -24,18 +24,18 @@ const Canvas = React.forwardRef<CompartmentElement>((_, ref) => {
 
     const { 
         mode,
-        focus,
-        model,
-        createCompartmentDeleteHandler,
+        compartmentIds,
+        transitionIds,
+        deleteCompartment,
         transitionCreatorStart,
         transitionCreatorEnd
     } = useModelCreator(contextDataSelector);
 
-    const compartmentRefs = React.useRef<Map<CompartmentLib.CompartmentId, CompartmentElement>>(new Map());
+    const compartmentRefs = React.useRef<Map<ModelComponentLib.ModelComponentId, CompartmentElement>>(new Map());
 
     // function helpers
 
-    const getCompartmentRef = (key: CompartmentLib.CompartmentId) => ({
+    const getCompartmentRef = (key: ModelComponentLib.ModelComponentId) => ({
         get current() {
             return compartmentRefs.current.get(key) ?? null;
         }
@@ -58,11 +58,11 @@ const Canvas = React.forwardRef<CompartmentElement>((_, ref) => {
     return (
         <div className="relative top-0 left-0 w-full h-full" style={style} ref={ref}>
             <Xwrapper>
-                {Array.from(model.compartments.entries()).map(([id, compartment]) => 
+                {compartmentIds.map((id) => 
                     <Compartment 
                         key={id} 
-                        compartment={compartment}
-                        deleteSelf={createCompartmentDeleteHandler(id)}
+                        compartmentId={id}
+                        deleteSelf={() => deleteCompartment(id)}
                         ref={(el: CompartmentElement) => {
                             if (el) {
                                 compartmentRefs.current.set(id, el);
@@ -72,23 +72,17 @@ const Canvas = React.forwardRef<CompartmentElement>((_, ref) => {
                         }}
                     />
                 )}
-                {Array.from(model.transitions.entries()).map(([id, transition]) => 
+                {transitionIds.map((id) => 
                     <Transition 
                         key={id} 
-                        start={getCompartmentRef(transition.start)}
-                        end={getCompartmentRef(transition.end)}
+                        transitionId={id}
+                        getCompartmentRef={getCompartmentRef}
                     />
                 )}
 
                 {transitionCreatorStart !== null && <TransitionCreator start={getCompartmentRef(transitionCreatorStart)} 
                     end={transitionCreatorEnd !== null ? getCompartmentRef(transitionCreatorEnd) : undefined}/>}
             </Xwrapper>
-
-            <a className="absolute right-10 bottom-10 bg-quaternary p-2 rounded-sm cursor-pointer text-center" 
-                onClick={() => { ModelLib.print(model) }}>
-                    Debug button<br />
-                    (mode='{mode}')
-            </a>
 
             <div className="absolute left-5 top-5">
                 <SaveButton />

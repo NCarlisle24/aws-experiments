@@ -1,11 +1,11 @@
-import type { Model } from "../model-creator";
+import { ModelLib } from "../model-creator";
 import { ROUTES } from "../router";
 import DeleteModelButton from "./DeleteModelButton";
 
 import React from 'react';
 
 interface ModelEntryProps {
-    model: Model,
+    model: ModelLib.Model,
     afterDelete: () => any
 };
 
@@ -20,7 +20,7 @@ export default function ModelEntry({ model, afterDelete }: ModelEntryProps) {
                style={{ cursor }}
                href={isDeleting ? undefined : ROUTES.MODEL_CREATOR + "/" + model.id}>
                 <div className="flex flex-col justify-start">
-                    <div className="text-xl font-bold">{isDeleting ? "Deleting: " + model.modelName : model.modelName}</div>
+                    <div className="text-xl font-bold">{isDeleting ? "Deleting: " + model.name : model.name}</div>
                     <div className="text-subtitle-on-secondary">{model.id}</div>
                     <div className="text-subtitle-on-secondary">Last modified: {model.lastModifiedAt}</div>
                     <div className="text-subtitle-on-secondary">

@@ -25,7 +25,8 @@ export default function SaveButton() {
     }
 
     return (
-        <div className="bg-quaternary px-3 py-2 flex justify-center items-center text-center rounded-sm" style={{ cursor }}
+        <div className="bg-quaternary px-3 py-2 flex justify-center items-center text-center rounded-sm bg-green-800" 
+             style={{ cursor }}
              onClick={handleClick}>
             { isSaving ? 
                 <div className="flex gap-2 justify-between items-center">

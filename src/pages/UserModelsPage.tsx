@@ -1,14 +1,15 @@
 import { useAuth } from '../auth/index.ts';
 import restApi from '../rest-api/index.ts';
-import { type Model, type ModelId } from '../../amplify/data/tables.ts';
+import { ModelLib } from '../model-creator';
 
-import React from 'react';
 import LargeLoader from '../components/LargeLoader.tsx';
 import CreateModelButton from '../components/CreateModelButton.tsx';
 import ModelEntry from '../components/ModelEntry.tsx';
 
+import React from 'react';
+
 export default function ModelsPage() {
-    const [models, setModels] = React.useState<Model[] | null>(null);
+    const [models, setModels] = React.useState<ModelLib.Model[] | null>(null);
 
     const authContextData = useAuth();
 
@@ -19,7 +20,7 @@ export default function ModelsPage() {
         })();
     }, []);
 
-    const createDeleteHandler = (modelId: ModelId) => {
+    const createDeleteHandler = (modelId: ModelLib.ModelId) => {
         return () => setModels(prev => {
             if (prev === null) return null;
             return prev.filter(model => model.id !== modelId);

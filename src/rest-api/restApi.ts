@@ -7,7 +7,7 @@ import * as z from "zod";
 
 import { TABLES, ZodDbModel, type DbModel, type ModelId, 
          userIdKeyName, modelIdKeyName} from '../../amplify/data/tables';
-import { type Model, ModelLib } from '../model-creator';
+import { ModelLib } from '../model-creator';
 
 import outputs from '../../amplify_outputs.json';
 
@@ -32,7 +32,7 @@ const createClient = async () => {
 }
 
 const restApi = (() => {
-    const getUserModel = async (authContextData: AuthContextData, modelId: string): Promise<Model | null> => {
+    const getUserModel = async (authContextData: AuthContextData, modelId: string): Promise<ModelLib.Model | null> => {
         if (!authContextData.isLoggedIn()) {
             return null;
         }
@@ -64,7 +64,7 @@ const restApi = (() => {
         }
     }
 
-    const getUserModels = async (authContextData: AuthContextData): Promise<Model[] | null> => {
+    const getUserModels = async (authContextData: AuthContextData): Promise<ModelLib.Model[] | null> => {
         if (!authContextData.isLoggedIn()) {
             return null;
         }
@@ -97,7 +97,7 @@ const restApi = (() => {
         }
     }
 
-    const createUserModel = async (authContextData: AuthContextData, model?: Model) => {
+    const createUserModel = async (authContextData: AuthContextData, model?: ModelLib.Model) => {
         if (!authContextData.isLoggedIn()) return;
 
         const client = await createClient();
@@ -167,7 +167,7 @@ const restApi = (() => {
         }
     }
 
-    const updateUserModel = async (authContextData: AuthContextData, model: Model) => {
+    const updateUserModel = async (authContextData: AuthContextData, model: ModelLib.Model) => {
         if (!authContextData.isLoggedIn()) return;
 
         const timeModified = new Date().toString();
@@ -182,7 +182,10 @@ const restApi = (() => {
         }
     }
 
-    const setUserModelName = async (authContextData: AuthContextData, modelId: ModelId, newName: Model["modelName"]) => {
+    const setUserModelName = async (
+        authContextData: AuthContextData, 
+        modelId: ModelId, newName: ModelLib.Model["name"]
+    ) => {
         if (!authContextData.isLoggedIn()) return;
 
         const client = await createClient();

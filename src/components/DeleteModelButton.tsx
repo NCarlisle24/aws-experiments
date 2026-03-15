@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Model } from '../../amplify/data/tables';
+import { ModelLib } from '../model-creator';
 import { useAuth } from '../auth';
 import restApi from '../rest-api';
 import { Loader } from '@aws-amplify/ui-react';
@@ -20,7 +20,7 @@ function DeleteButton({ onClick, children, style }: DeleteButtonProps) {
 }
 
 interface DeleteModelButtonProps {
-    model: Model,
+    model: ModelLib.Model,
     onDelete?: () => any,
     afterDelete?: () => any
 }
@@ -73,7 +73,7 @@ export default function DeleteModelButton({ model, onDelete, afterDelete }: Dele
             <div className="w-screen h-screen fixed top-0 left-0 z-2048 backdrop-blur-xs flex 
                             items-center justify-center cursor-default">
                 <div className="p-3 bg-light-secondary rounded-md h-25 flex flex-col shadow-lg" ref={confirmationMenuRef}>
-                    Are you sure you want to delete "{model.modelName}"?
+                    Are you sure you want to delete "{model.name}"?
                     <div className="mt-auto flex gap-2 self-end">
                         <div className="p-2 rounded-sm bg-secondary hover:bg-light-secondary text-center cursor-pointer"
                                 onClick={hideConfirmationMenu}>

@@ -1,6 +1,6 @@
-import * as CompartmentLib from './Compartment';
+import * as ModelComponentLib from './components/ModelComponent';
+import * as CompartmentLib from './components/Compartment';
+import * as TransitionLib from './components/Transition';
 import * as ModelLib from './Model';
-import * as TransitionLib from './Transition';
-import * as FocusLib from './Focus';
 
-export { CompartmentLib, ModelLib, TransitionLib, FocusLib };
+export { ModelComponentLib, ModelLib, CompartmentLib, TransitionLib };

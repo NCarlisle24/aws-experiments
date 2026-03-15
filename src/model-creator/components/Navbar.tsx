@@ -4,9 +4,10 @@ import ProfileIcon from '../../components/ProfileIcon.tsx';
 import NavLink from '../../components/NavLink.tsx';
 
 import React from 'react';
+import DebugButton from './DebugButton.tsx';
 
 const contextDataSelector = (data: ModelCreatorContextData) => ({
-    modelName: data.model!.modelName, 
+    modelName: data.model!.name, 
     setModelName: data.setModelName 
 });
 
@@ -37,6 +38,7 @@ export default function ModelCreatorNavbar() {
 
 
             <div className="flex gap-6 h-full">
+                <DebugButton />
                 <NavLink dest={ROUTES.HOME}>Home</NavLink>
                 <NavLink dest={ROUTES.USER_MODELS}>Models</NavLink>
 

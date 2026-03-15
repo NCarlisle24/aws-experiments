@@ -4,38 +4,41 @@ import { useXarrow } from 'react-xarrows';
 import CompartmentTemplate, { type CompartmentTemplateProps } from './CompartmentTemplate';
 import { useModelCreator, type ModelCreatorContextData } from '../../ModelCreatorContext';
 import { getMousePos } from './CompartmentUtils';
-import { CompartmentLib } from '../../system';
+import { ModelComponentLib } from '../../system';
 import { Mode } from '../../enums/Mode';
 
 export type CompartmentElement = HTMLDivElement;
 
 export interface CompartmentProps {
-    compartment: CompartmentLib.Compartment;
+    compartmentId: ModelComponentLib.ModelComponentId;
     deleteSelf: () => any;
 }
 
-const contextDataSelector = (data: ModelCreatorContextData) => ({
-    canvasRef:                 data.canvasRef,
-    mode:                      data.mode,
-    setMode:                   data.setMode,
-    transitionCreatorStart:    data.transitionCreatorStart,
-    setTransitionCreatorStart: data.setTransitionCreatorStart,
-    setTransitionCreatorEnd:   data.setTransitionCreatorEnd,
-    updateCompartment:         data.updateCompartment,
-    resetFocus:                data.resetFocus,
-    addToFocus:                data.addToFocus
-});
-
 const Compartment = React.forwardRef<CompartmentElement, CompartmentProps>(({ 
-    compartment, 
+    compartmentId,
     deleteSelf, 
 }: CompartmentProps, ref) => {
     const updateArrows = useXarrow();
+
+    const contextDataSelector = React.useCallback((data: ModelCreatorContextData) => ({
+        canvasRef:                 data.canvasRef,
+        mode:                      data.mode,
+        transitionCreatorStart:    data.transitionCreatorStart,
+        compartment:               data.model!.compartments.get(compartmentId)!,
+        setMode:                   data.setMode,
+        setTransitionCreatorStart: data.setTransitionCreatorStart,
+        setTransitionCreatorEnd:   data.setTransitionCreatorEnd,
+        updateCompartment:         data.updateCompartment,
+        resetFocus:                data.resetFocus,
+        addToFocus:                data.addToFocus,
+    }), [compartmentId]);
+
     const {
         canvasRef,
         mode,
-        setMode,
         transitionCreatorStart,
+        compartment,
+        setMode,
         setTransitionCreatorStart,
         setTransitionCreatorEnd,
         updateCompartment,
@@ -64,7 +67,7 @@ const Compartment = React.forwardRef<CompartmentElement, CompartmentProps>(({
             setMode(Mode.MOVE_COMPARTMENT);
 
             resetFocus();
-            addToFocus(compartment);
+            addToFocus(compartmentId);
         },
         onRelease: (e, x, y) => {
             setMode(Mode.SELECT);
@@ -77,7 +80,7 @@ const Compartment = React.forwardRef<CompartmentElement, CompartmentProps>(({
                 return;
             }
 
-            updateCompartment(compartment.id, { x, y });
+            updateCompartment(compartmentId, { x, y });
         },
         onDrag: () => {
             updateArrows();
@@ -93,11 +96,11 @@ const Compartment = React.forwardRef<CompartmentElement, CompartmentProps>(({
             cursor
         },
         onPickup: () => {
-            setTransitionCreatorStart(compartment.id);
+            setTransitionCreatorStart(compartmentId);
         },
         onMouseEnter: () => {
-            if (transitionCreatorStart !== null && transitionCreatorStart !== compartment.id) {
-                setTransitionCreatorEnd(compartment.id);
+            if (transitionCreatorStart !== null && transitionCreatorStart !== compartmentId) {
+                setTransitionCreatorEnd(compartmentId);
             }
         },
         onMouseLeave: () => {

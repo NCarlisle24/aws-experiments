@@ -1,29 +1,36 @@
 import React from 'react';
 
-import { ModelLib, CompartmentLib } from './system/index.ts';
+import { ModelLib, CompartmentLib, ModelComponentLib } from './system';
 import { Mode } from './enums/Mode.ts';
-import type { Focus, Focusable } from './system/Focus.ts';
 
 // interface
+// TODO: add cursor as an option so that the cursor can be set globally
+
+export type Focus = ReadonlySet<ModelComponentLib.ModelComponentId>;
 
 export interface ModelCreatorContextData {
-    readonly model: ModelLib.Model | null;
-    readonly canvasRef: React.RefObject<HTMLDivElement | null>;
-    readonly mode: Mode;
-    readonly setMode: (mode: Mode) => any;
-    readonly focus: Focus;
-    readonly addToFocus: (obj: Focusable) => any;
-    readonly removeFromFocus: (callbackFn: ((obj: Focusable) => boolean)) => any;
-    readonly resetFocus: () => any;
-    readonly setModelName: (name: string) => any;
-    readonly createCompartmentDeleteHandler: (id: CompartmentLib.CompartmentId) => (() => any);
-    readonly createCompartment: (name: string, x: number, y: number) => any;
-    readonly updateCompartment: (compartmentId: CompartmentLib.CompartmentId, updates: Partial<CompartmentLib.Compartment>) => any,
-    readonly createTransition: (startId: CompartmentLib.CompartmentId, endId: CompartmentLib.CompartmentId) => any;
-    readonly transitionCreatorStart: CompartmentLib.CompartmentId | null,
-    readonly transitionCreatorEnd: CompartmentLib.CompartmentId | null,
-    readonly setTransitionCreatorStart: (compartment: CompartmentLib.CompartmentId | null) => any,
-    readonly setTransitionCreatorEnd: (compartment: CompartmentLib.CompartmentId | null) => any,
+    readonly model:                     ModelLib.Model | null;
+    readonly mode:                      Mode;
+    readonly focus:                     Focus;
+    readonly canvasRef:                 React.RefObject<HTMLDivElement | null>;
+    readonly transitionCreatorStart:    ModelComponentLib.ModelComponentId | null,
+    readonly transitionCreatorEnd:      ModelComponentLib.ModelComponentId | null,
+
+    readonly setMode:                   (mode: Mode) => any;
+
+    readonly addToFocus:                (id: ModelComponentLib.ModelComponentId) => any;
+    readonly removeFromFocus:           (id: ModelComponentLib.ModelComponentId) => any;
+    readonly resetFocus:                () => any;
+
+    readonly setModelName:              (name: string) => any;
+
+    readonly deleteCompartment:         (id: ModelComponentLib.ModelComponentId) => any;
+    readonly createCompartment:         (name: string, x: number, y: number) => any;
+    readonly updateCompartment:         (id: ModelComponentLib.ModelComponentId, updates: Partial<CompartmentLib.Compartment>) => any,
+
+    readonly createTransition:          (startId: ModelComponentLib.ModelComponentId, endId: ModelComponentLib.ModelComponentId) => any;
+    readonly setTransitionCreatorStart: (compartmentId: ModelComponentLib.ModelComponentId | null) => any,
+    readonly setTransitionCreatorEnd:   (compartmentId: ModelComponentLib.ModelComponentId | null) => any,
 }
 
 // data store
@@ -55,9 +62,7 @@ export type ModelCreatorContextDataStore = ReturnType<typeof createModelCreatorD
 
 export const ModelCreatorContext = React.createContext<ModelCreatorContextDataStore | null>(null);
 
-type DataSelection = Partial<ModelCreatorContextData>;
-
-export const useModelCreator = <Selection extends DataSelection>(
+export const useModelCreator = <Selection extends Object>(
     selector: (currData: ModelCreatorContextData) => Selection
 ): Selection => {
     const dataStore = React.useContext(ModelCreatorContext);
@@ -94,7 +99,7 @@ export const useModelCreator = <Selection extends DataSelection>(
 
 // helper functions
 
-const selectionsAreEqual = <S extends DataSelection>(selection1: S | null, selection2: S | null): boolean => {
+const selectionsAreEqual = <S extends Object>(selection1: S | null, selection2: S | null): boolean => {
     if (selection1 === null || selection2 === null) return false;
     if (Object.is(selection1, selection2)) return true;
 

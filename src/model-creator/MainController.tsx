@@ -1,53 +1,79 @@
+// react
+
 import React from 'react';
 import { useParams } from 'react-router-dom';
+
+// components
 
 import Toolbox from './components/toolbox/Toolbox.tsx';
 import Canvas from './components/Canvas.tsx';
 import ModelCreatorNavbar from './components/Navbar.tsx';
-import { type CompartmentProps } from './components/compartment/Compartment.tsx';
-import { ModelLib, CompartmentLib, TransitionLib, FocusLib } from './system/index.ts';
-import { createModelCreatorDataStore, ModelCreatorContext, type ModelCreatorContextData } from './ModelCreatorContext.ts';
-import { Mode } from './enums/Mode.ts';
+import LargeLoader from '../components/LargeLoader.tsx';
+
+// context stuff
+
 import restApi from '../rest-api/restApi.ts';
 import { useAuth } from '../auth/index.ts';
+import { 
+    createModelCreatorDataStore,
+    ModelCreatorContext,
+    type ModelCreatorContextData
+} from './ModelCreatorContext.ts';
+
+// misc types
+
+import { Mode } from './enums/Mode.ts';
+import { ModelLib, CompartmentLib, TransitionLib, ModelComponentLib } from './system/index.ts';
+
+// styling
 
 import './model-creator.css';
-import LargeLoader from '../components/LargeLoader.tsx';
+
+// component
 
 export default function MainController() {
     const canvasRef: ModelCreatorContextData["canvasRef"] = React.useRef(null);
-    const compartmentIdRef = React.useRef<CompartmentLib.CompartmentId>(0);
-    const transitionIdRef = React.useRef<CompartmentLib.CompartmentId>(0);
+    const componentIdRef = React.useRef<ModelComponentLib.ModelComponentId>(0);
 
     const authContextData = useAuth();
     const { modelId } = useParams();
     const safeModelId = modelId ?? "";
 
-    // initialize the model
+    // initialize the context data
 
     const modelCreatorDataStore = React.useMemo(() => createModelCreatorDataStore({
-        model: null,
-        mode: Mode.DEFAULT,
+        model:                  null,
+        mode:                   Mode.DEFAULT,
+        transitionCreatorStart: null,
+        transitionCreatorEnd:   null,
+        focus:                  new Set(),
+        canvasRef,
+
         setMode: (mode: Mode) => {
             modelCreatorDataStore.setData(prevData => ({ ...prevData, mode }));
         },
-        canvasRef,
-        createCompartmentDeleteHandler: (id: CompartmentLib.CompartmentId): CompartmentProps["deleteSelf"] => {
-            return () => {
-                modelCreatorDataStore.setData(prevData => {
-                    if (prevData.model === null) return prevData;
-                    return {
-                        ...prevData, 
-                        model: ModelLib.removeCompartment(prevData.model, id),
-                    };
-                });
-            }
-        },
-        createCompartment: (name: string, x: number, y: number) => {
+
+        deleteCompartment: (id: ModelComponentLib.ModelComponentId) => {
             modelCreatorDataStore.setData(prevData => {
                 if (prevData.model === null) return prevData;
 
-                const newCompartment = CompartmentLib.create(name, x, y, compartmentIdRef.current++);
+                return {
+                    ...prevData, 
+                    model: ModelLib.removeCompartment(prevData.model, id),
+                };
+            });
+        },
+
+        createCompartment: (name: string, x?: number, y?: number) => {
+            modelCreatorDataStore.setData(prevData => {
+                if (prevData.model === null) return prevData;
+
+                const newCompartment = CompartmentLib.createCompartment(
+                    componentIdRef.current++,
+                    name,
+                    x,
+                    y,
+                );
 
                 return {
                     ...prevData,
@@ -55,8 +81,9 @@ export default function MainController() {
                 };
             });
         },
+
         updateCompartment: (
-            compartmentId: CompartmentLib.CompartmentId,
+            id: ModelComponentLib.ModelComponentId,
             updates: Partial<CompartmentLib.Compartment>
         ) => {
             modelCreatorDataStore.setData(prevData => {
@@ -64,18 +91,23 @@ export default function MainController() {
 
                 return {
                     ...prevData,
-                    model: ModelLib.updateCompartment(prevData.model, compartmentId, updates),
+                    model: ModelLib.updateCompartment(prevData.model, id, updates),
                 };
             });
         },
+
         createTransition: (
-            startId: CompartmentLib.CompartmentId,
-            endId: CompartmentLib.CompartmentId
+            startId: ModelComponentLib.ModelComponentId,
+            endId: ModelComponentLib.ModelComponentId,
         ) => {
             modelCreatorDataStore.setData(prevData => {
                 if (prevData.model === null) return prevData;
 
-                const newTransition = TransitionLib.create(startId, endId, transitionIdRef.current++);
+                const newTransition = TransitionLib.createTransition(
+                    componentIdRef.current++,
+                    startId,
+                    endId,
+                );
 
                 return {
                     ...prevData,
@@ -83,26 +115,34 @@ export default function MainController() {
                 };
             })
         },
-        transitionCreatorStart: null,
-        transitionCreatorEnd: null,
-        setTransitionCreatorStart: (compartment: CompartmentLib.CompartmentId | null) => {
+
+        setTransitionCreatorStart: (compartmentId: ModelComponentLib.ModelComponentId | null) => {
             modelCreatorDataStore.setData(prevData => {
-                return {
-                    ...prevData,
-                    transitionCreatorStart: compartment,
-                };
+                const newData: ModelCreatorContextData = { ...prevData, transitionCreatorStart: compartmentId };
+
+                if (compartmentId === null) return newData;
+
+                if (!prevData.model || !prevData.model.compartments.has(compartmentId)) return prevData;
+
+                return newData;
             })
         },
-        setTransitionCreatorEnd: (compartment: CompartmentLib.CompartmentId | null) => {
+
+        setTransitionCreatorEnd: (compartmentId: ModelComponentLib.ModelComponentId | null) => {
             modelCreatorDataStore.setData(prevData => {
-                return {
-                    ...prevData,
-                    transitionCreatorEnd: compartment,
-                };
+                const newData: ModelCreatorContextData = { ...prevData, transitionCreatorEnd: compartmentId };
+
+                if (compartmentId === null) return newData;
+
+                if (!prevData.model || !prevData.model.compartments.has(compartmentId)) return prevData;
+
+                return newData;
             })
         },
+
         setModelName: (name: string) => {
             if (name.length == 0) return;
+
             modelCreatorDataStore.setData(prevData => { 
                 if (prevData.model === null) return prevData;
 
@@ -112,23 +152,43 @@ export default function MainController() {
                 };
             });
         },
-        focus: FocusLib.createFocus(),
-        addToFocus: (obj: FocusLib.Focusable) => {
-            modelCreatorDataStore.setData(prevData => ({
-                ...prevData,
-                focus: FocusLib.addToFocus(prevData.focus, obj),
-            }));
+
+        addToFocus: (id: ModelComponentLib.ModelComponentId) => {
+            modelCreatorDataStore.setData(prevData => {
+                if (prevData.focus.has(id)) return prevData;
+
+                const newFocus = new Set(prevData.focus);
+                newFocus.add(id);
+
+                const newData: ModelCreatorContextData = {
+                    ...prevData,
+                    focus: newFocus
+                };
+
+                return newData;
+            });
         },
-        removeFromFocus: (callbackFn: ((obj: FocusLib.Focusable) => boolean)) => {
-            modelCreatorDataStore.setData(prevData => ({
-                ...prevData,
-                focus: FocusLib.removeFromFocus(prevData.focus, callbackFn),
-            }));
+
+        removeFromFocus: (id: ModelComponentLib.ModelComponentId) => {
+            modelCreatorDataStore.setData(prevData => {
+                if (!prevData.focus.has(id)) return prevData;
+
+                const newFocus = new Set(prevData.focus);
+                newFocus.delete(id);
+                
+                const newData: ModelCreatorContextData = {
+                    ...prevData,
+                    focus: newFocus
+                };
+
+                return newData;
+            });
         },
+
         resetFocus: () => {
             modelCreatorDataStore.setData(prevData => ({
                 ...prevData,
-                focus: FocusLib.resetFocus(prevData.focus),
+                focus: new Set()
             }));
         }
     }), []);
@@ -142,19 +202,13 @@ export default function MainController() {
                 return;
             }
 
-            let highestCompartmentId = -1;
-            let highestTransitionId = -1;
+            let highestId = -1;
 
-            model.compartments.forEach(compartment => {
-                if (compartment.id > highestCompartmentId) highestCompartmentId = compartment.id;
+            model.components.forEach(component => {
+                if (component.id > highestId) highestId = component.id;
             });
 
-            model.transitions.forEach(transition => {
-                if (transition.id > highestTransitionId) highestTransitionId = transition.id;
-            })
-
-            compartmentIdRef.current = highestCompartmentId + 1;
-            transitionIdRef.current = highestTransitionId + 1;
+            componentIdRef.current = highestId + 1;
             modelCreatorDataStore.setData(prevData => ({ ...prevData, model }));
         })();
     }, []);

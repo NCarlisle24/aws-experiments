@@ -1,141 +1,210 @@
-import type { Compartment, CompartmentId } from "./Compartment";
-import type { Transition, TransitionId } from "./Transition";
-import * as CompartmentLib from "./Compartment";
-import * as TransitionLib from "./Transition";
-
+import { type ModelComponent, type ModelComponentId } from "./components/ModelComponent";
+import type { Compartment } from "./components/Compartment";
+import type { Transition } from "./components/Transition";
 import type { DbModel, ModelId } from '../../../amplify/data/tables';
+import * as CompartmentLib from "./components/Compartment";
+import * as TransitionLib from "./components/Transition";
 
 export { type ModelId };
-export interface Model extends Omit<Omit<DbModel, "compartments">, "transitions"> {
-    compartments: ReadonlyMap<CompartmentId, Readonly<Compartment>>,
-    transitions: ReadonlyMap<TransitionId, Readonly<Transition>>
+
+export interface Model {
+    readonly id:             ModelId,
+    readonly userId:         string,
+    readonly name:           string,
+    readonly createdAt:      string,
+    readonly lastModifiedAt: string,
+    readonly components:     ReadonlyMap<ModelComponentId, ModelComponent>,
+    readonly compartments:   ReadonlyMap<ModelComponentId, Compartment>,
+    readonly transitions:    ReadonlyMap<ModelComponentId, Transition>,
 };
-
-export const hasCompartmentWithId = (model: Model, id: CompartmentId): boolean => {
-    return (model.compartments.has(id));
-}
-
-export const hasTransitionWithId = (model: Model, id: TransitionId): boolean => {
-    return (model.transitions.has(id));
-}
-
-export const getCompartmentWithId = (model: Model, id: CompartmentId): Compartment | null => {
-    if (!hasCompartmentWithId(model, id)) return null;
-    return model.compartments.get(id)!;
-}
-
-export const getTransitionWithId = (model: Model, id: TransitionId): Transition | null => {
-    if (!hasTransitionWithId(model, id)) return null;
-    return model.transitions.get(id)!;
-}
 
 export const addCompartment = (model: Model, compartment: Compartment): Model => {
     // the added compartment cannot have existing transitions
-    if (hasCompartmentWithId(model, compartment.id) 
-        || compartment.inTransitions.length > 0
-        || compartment.outTransitions.length > 0) return model;
+    if (model.components.has(compartment.id)
+        || compartment.inTransitions.size > 0
+        || compartment.outTransitions.size > 0
+    ) {
+        return model;
+    }
+
+    const newComponents = new Map(model.components);
+    newComponents.set(compartment.id, compartment);
+
+    const newCompartments = new Map(model.compartments);
+    newCompartments.set(compartment.id, compartment);
 
     return {
         ...model,
-        compartments: new Map([...model.compartments, [compartment.id, compartment]])
+        components: newComponents,
+        compartments: newCompartments,
     };
 }
 
 export const addTransition = (model: Model, transition: Transition): Model => {
     // rules: 
+    // - transition must have a unique id
+    // - the start and end must both be compartments
     // - both compartments need to exist in the model
     // - compartments must be unique
     // - an equivalent transition cannot already exist
 
-    if (hasTransitionWithId(model, transition.id)) return model;
+    // unique ID
+
+    if (model.transitions.has(transition.id)) return model;
+
+    // check start and end
 
     const startId = transition.start;
+    const start = model.compartments.get(startId);
+
     const endId = transition.end;
-    const start = getCompartmentWithId(model, startId);
-    const end = getCompartmentWithId(model, endId);
+    const end = model.compartments.get(endId);
 
     if (!start || !end || startId === endId) return model;
 
+    // check for an equivalent transition
+
     for (const existingTransitionId of start.outTransitions) {
-        const currTransition = getTransitionWithId(model, existingTransitionId)!;
+        const currTransition = model.transitions.get(existingTransitionId)!;
         if (currTransition.end === endId) return model;
     }
 
     // tests passed; can connect transition
 
+    // compartments
+
     const newCompartments = new Map(model.compartments);
 
-    newCompartments.set(startId, CompartmentLib.addOutTransition(start, transition.id));
-    newCompartments.set(endId, CompartmentLib.addInTransition(end, transition.id));
+    const newStartCompartment = CompartmentLib.addOutTransition(start, transition.id);
+    const newEndCompartment = CompartmentLib.addInTransition(end, transition.id);
+
+    newCompartments.set(startId, newStartCompartment);
+    newCompartments.set(endId, newEndCompartment);
+
+    // transition
 
     const newTransitions = new Map(model.transitions);
+
     newTransitions.set(transition.id, transition);
+
+    // components
+
+    const newComponents = new Map(model.components);
+
+    newComponents.set(startId, newStartCompartment);
+    newComponents.set(endId, newEndCompartment);
+    newComponents.set(transition.id, transition);
+
+    // return
 
     return {
         ...model,
+        components:   newComponents,
         compartments: newCompartments,
-        transitions: newTransitions
+        transitions:  newTransitions
     };
 
 }
 
-export const removeTransition = (model: Model, id: TransitionId): Model => {
-    const transition = getTransitionWithId(model, id);
+export const removeTransition = (model: Model, id: ModelComponentId): Model => {
+    const transition = model.transitions.get(id);
     if (!transition) return model;
 
     const startId = transition.start;
     const endId = transition.end;
-    const start = getCompartmentWithId(model, startId)!;
-    const end = getCompartmentWithId(model, endId)!;
+    const start = model.compartments.get(startId)!;
+    const end = model.compartments.get(endId)!;
+
+    // transition
 
     const newTransitions = new Map(model.transitions);
     newTransitions.delete(id);
 
+    // compartments
+
     const newCompartments = new Map(model.compartments);
 
-    newCompartments.set(startId, CompartmentLib.removeOutTransition(start, id));
-    newCompartments.set(endId, CompartmentLib.removeInTransition(end, id));
+    const newStartCompartment = CompartmentLib.removeOutTransition(start, id);
+    const newEndCompartment = CompartmentLib.removeInTransition(end, id);
+
+    newCompartments.set(startId, newStartCompartment);
+    newCompartments.set(endId, newEndCompartment);
+
+    // components
+
+    const newComponents = new Map(model.components);
+
+    newComponents.delete(id);
+    newComponents.set(startId, newStartCompartment);
+    newComponents.set(endId, newEndCompartment);
+
+    // return
 
     return {
         ...model,
+        components:   newComponents,
         compartments: newCompartments,
-        transitions: newTransitions
+        transitions:  newTransitions,
     };
 }
 
-export const removeCompartment = (model: Model, id: CompartmentId): Model => {
-    const compartment = getCompartmentWithId(model, id);
+export const removeCompartment = (model: Model, id: ModelComponentId): Model => {
+    const compartment = model.compartments.get(id);
     if (!compartment) return model;
+
+    // remove transitions
 
     const transitionIdsToRemove = [ ...compartment.inTransitions, ...compartment.outTransitions ];
     for (const idToRemove of transitionIdsToRemove) {
         model = removeTransition(model, idToRemove);
     }
 
+    // remove compartment
+
     const newCompartments = new Map(model.compartments);
     newCompartments.delete(id);
 
+    const newComponents = new Map(model.components);
+    newComponents.delete(id);
+
+    // return
+
     const newModel: Model = {
         ...model,
-        compartments: newCompartments
+        components:   newComponents,
+        compartments: newCompartments,
     };
 
     return newModel;
 }
 
-export const updateCompartment = (model: Model, id: CompartmentId, updates: Partial<Compartment>): Model => {
-    const prevCompartment = getCompartmentWithId(model, id);
+export const updateCompartment = (model: Model, id: ModelComponentId, updates: Partial<Compartment>): Model => {
+    const prevCompartment = model.compartments.get(id);
     if (!prevCompartment) return model;
+
+    // update compartment
 
     const newCompartment = { ...prevCompartment, ...updates };
 
     const newCompartments = new Map(model.compartments);
-    newCompartments.set(prevCompartment.id, newCompartment);
+    newCompartments.set(id, newCompartment);
+
+    // update components
+
+    const newComponents = new Map(model.components);
+    newComponents.set(id, newCompartment);
+
+    // return
 
     return {
         ...model,
-        compartments: newCompartments
+        components:   newComponents,
+        compartments: newCompartments,
     };
+}
+
+export const setName = (model: Model, name: string): Model => {
+    return { ...model, name };
 }
 
 export const convertToDbModel = (model: Model): DbModel => {
@@ -150,38 +219,52 @@ export const convertToDbModel = (model: Model): DbModel => {
         newTransitions.push(TransitionLib.convertToDbTransition(transition));
     });
 
-    return {
-        ...model,
-        compartments: newCompartments,
-        transitions: newTransitions
+    const convertedModel: DbModel = {
+        id:             model.id,
+        user_id:        model.userId,
+        modelName:      model.name,
+        createdAt:      model.createdAt,
+        lastModifiedAt: model.lastModifiedAt,
+        compartments:   newCompartments,
+        transitions:    newTransitions,
     };
-}
 
-export const setName = (model: Model, name: string): Model => {
-    return {
-        ...model,
-        modelName: name
-    };
+    return convertedModel;
 }
 
 export const convertFromDbModel = (dbModel: DbModel): Model => {
-    return {
-        ...dbModel,
-        compartments: new Map(
-            dbModel.compartments.map(
-                compartment => [compartment.id, CompartmentLib.convertFromDbCompartment(compartment)]
-            )
-        ),
-        transitions: new Map(
-            dbModel.transitions.map(
-                transition => [transition.id, TransitionLib.convertFromDbTransition(transition)]
-            )
-        ),
-    }
+    const compartments: Model["compartments"] = new Map(
+        dbModel.compartments.map(
+            compartment => [compartment.id, CompartmentLib.convertFromDbCompartment(compartment)]
+        )
+    );
+
+    const transitions: Model["transitions"] = new Map(
+        dbModel.transitions.map(
+            transition => [transition.id, TransitionLib.convertFromDbTransition(transition)]
+        )
+    );
+
+    const components: Model["components"] = new Map(
+        [...compartments as Model["components"], ...transitions as Model["components"]]
+    );
+
+    const model: Model = {
+        id:             dbModel.id,
+        userId:         dbModel.user_id,
+        name:           dbModel.modelName,
+        createdAt:      dbModel.createdAt,
+        lastModifiedAt: dbModel.lastModifiedAt,
+        components,
+        compartments,
+        transitions,
+    };
+
+    return model;
 }
 
 export const print = (model: Model): void => {
-    let message = `\nPrinting model "${model.modelName}" (ID = ${model.id}):\n\nCOMPARTMENTS\n\n`;
+    let message = `\nPrinting model "${model.name}" (ID = ${model.id}):\n\nCOMPARTMENTS\n\n`;
 
     if (model.compartments.size == 0) {
         message += "(none)\n\n";
@@ -190,22 +273,24 @@ export const print = (model: Model): void => {
     for (const compartment of model.compartments.values()) {
         message += `"${compartment.name}" (ID = ${compartment.id}) at (${Math.round(compartment.x)}, ${Math.round(compartment.y)}).`;
 
-        const hasInTransitions = (compartment.inTransitions.length > 0);
-        const hasOutTransitions = (compartment.outTransitions.length > 0);
+        const hasInTransitions = (compartment.inTransitions.size > 0);
+        const hasOutTransitions = (compartment.outTransitions.size > 0);
 
         if (!hasInTransitions && !hasOutTransitions) {
             message += `\n- (no transitions)`;
         }
 
         for (const outTransitionId of compartment.outTransitions) {
-            const outTransition = getTransitionWithId(model, outTransitionId)!;
-            const dest = getCompartmentWithId(model, outTransition.end)!;
+            const outTransition = model.transitions.get(outTransitionId)!;
+            const dest = model.compartments.get(outTransition.end)!;
+
             message += `\n- Can go to "${dest.name}" (compartment ID = ${dest.id}; transition ID = ${outTransitionId})`;
         }
 
         for (const inTransitionId of compartment.inTransitions) {
-            const inTransition = getTransitionWithId(model, inTransitionId)!;
-            const start = getCompartmentWithId(model, inTransition.start)!;
+            const inTransition = model.transitions.get(inTransitionId)!;
+            const start = model.compartments.get(inTransition.start)!;
+
             message += `\n- Can come from "${start.name}" (compartment ID = ${start.id}; transition ID = ${inTransitionId})`;
         }
 
@@ -219,8 +304,9 @@ export const print = (model: Model): void => {
     }
 
     for (const transition of model.transitions.values()) {
-        const start = getCompartmentWithId(model, transition.start)!;
-        const end = getCompartmentWithId(model, transition.end)!;
+        const start = model.compartments.get(transition.start)!;
+        const end = model.compartments.get(transition.end)!;
+
         message += `ID ${transition.id} connects "${start.name}" (ID = ${start.id}) to "${end.name}" (ID = ${end.id}).\n`;
     }
 
