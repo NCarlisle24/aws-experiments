@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { useModelCreator } from '../../ModelCreatorContext';
+import { useModelCreator, type ModelCreatorContextData } from '../../ModelCreatorContext';
 import { Mode } from '../../enums/Mode';
 
 interface ModeSelectorButtonProps {
@@ -9,8 +9,13 @@ interface ModeSelectorButtonProps {
     children: React.ReactNode
 }
 
+const contextDataSelector = (data: ModelCreatorContextData) => ({
+    currentMode: data.mode,
+    setMode: data.setMode 
+});
+
 export default function ModeSelectorButton({ mode, activeModes, children }: ModeSelectorButtonProps) {
-    const { mode: currentMode, setMode } = useModelCreator();
+    const { currentMode, setMode } = useModelCreator(contextDataSelector);
 
     let isActive = false;
     for (const activeMode of activeModes) {

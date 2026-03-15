@@ -11,17 +11,15 @@ export const create = (start: CompartmentId, end: CompartmentId, id: TransitionI
     start,
     end,
     weight: "",
-    isInFocus: false
 });
 
 export const convertToDbTransition = (transition: Transition): DbTransition => {
-    const { isInFocus: _, ...dbTransition} = transition;
+    const { ...dbTransition} = transition;
     return dbTransition;
 }
 
 export const convertFromDbTransition = (dbTransition: DbTransition): Transition => {
     return {
         ...dbTransition,
-        isInFocus: false
     };
 }

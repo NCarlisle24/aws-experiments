@@ -41,8 +41,7 @@ export const addCompartment = (model: Model, compartment: Compartment): Model =>
     };
 }
 
-export const addTransition = (model: Model, transition: Transition): Model => 
-{
+export const addTransition = (model: Model, transition: Transition): Model => {
     // rules: 
     // - both compartments need to exist in the model
     // - compartments must be unique
@@ -158,6 +157,13 @@ export const convertToDbModel = (model: Model): DbModel => {
     };
 }
 
+export const setName = (model: Model, name: string): Model => {
+    return {
+        ...model,
+        modelName: name
+    };
+}
+
 export const convertFromDbModel = (dbModel: DbModel): Model => {
     return {
         ...dbModel,
@@ -175,14 +181,14 @@ export const convertFromDbModel = (dbModel: DbModel): Model => {
 }
 
 export const print = (model: Model): void => {
-    let message = `\nPrinting model with ID ${model.id}:\n\nCOMPARTMENTS\n\n`;
+    let message = `\nPrinting model "${model.modelName}" (ID = ${model.id}):\n\nCOMPARTMENTS\n\n`;
 
     if (model.compartments.size == 0) {
         message += "(none)\n\n";
     }
 
     for (const compartment of model.compartments.values()) {
-        message += `"${compartment.name}" (ID = ${compartment.id}) at (${compartment.x}, ${compartment.y}).`;
+        message += `"${compartment.name}" (ID = ${compartment.id}) at (${Math.round(compartment.x)}, ${Math.round(compartment.y)}).`;
 
         const hasInTransitions = (compartment.inTransitions.length > 0);
         const hasOutTransitions = (compartment.outTransitions.length > 0);

@@ -1,12 +1,16 @@
 import CompartmentTool from "./CompartmentTool";
-import { useModelCreator } from "../../ModelCreatorContext";
+import { useModelCreator, type ModelCreatorContextData } from "../../ModelCreatorContext";
 import { Mode } from "../../enums/Mode";
 
 import React from 'react';
 import ModeSelectorBar from "./ModeSelectorBar";
 
+const contextDataSelector = (data: ModelCreatorContextData) => ({
+    mode: data.mode 
+});
+
 export default function Toolbox() {
-    const { mode } = useModelCreator();
+    const { mode } = useModelCreator(contextDataSelector);
 
     let cursor = "default";
     if (Mode.isEqual(mode, Mode.CREATE_COMPARTMENT) || Mode.isEqual(mode, Mode.MOVE_COMPARTMENT)) {

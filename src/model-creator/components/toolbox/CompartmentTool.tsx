@@ -1,4 +1,4 @@
-import { useModelCreator } from "../../ModelCreatorContext";
+import { useModelCreator, type ModelCreatorContextData } from "../../ModelCreatorContext";
 import CompartmentTemplate, { type CompartmentTemplateProps } from '../compartment/CompartmentTemplate';
 import { getMousePos } from "../compartment/CompartmentUtils";
 import { Mode } from "../../enums/Mode";
@@ -9,8 +9,21 @@ interface CompartmentToolProps {
     name: string;
 };
 
+const contextDataSelector = (data: ModelCreatorContextData) => ({
+    canvasRef:         data.canvasRef,
+    createCompartment: data.createCompartment,
+    mode:              data.mode,
+    setMode:           data.setMode
+});
+
 export default function CompartmentTool({ name }: CompartmentToolProps) {
-    const { canvasRef, createCompartment, mode, setMode } = useModelCreator();
+    const {
+        canvasRef,
+        createCompartment,
+        mode,
+        setMode
+    } = useModelCreator(contextDataSelector);
+
     const compartmentCreatorRef = React.useRef<HTMLDivElement>(null);
 
     let cursor = "grab";

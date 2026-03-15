@@ -1,13 +1,17 @@
 import { Loader } from '@aws-amplify/ui-react';
 import React from 'react';
 import restApi from '../../rest-api';
-import { useModelCreator } from '../ModelCreatorContext';
+import { useModelCreator, type ModelCreatorContextData } from '../ModelCreatorContext';
 import { useAuth } from '../../auth';
+
+const contextDataSelector = (data: ModelCreatorContextData) => ({
+    model: data.model!
+});
 
 export default function SaveButton() {
     const [isSaving, setIsSaving] = React.useState<boolean>(false);
 
-    const { model } = useModelCreator();
+    const { model } = useModelCreator(contextDataSelector);
     const authContextData = useAuth();
 
     const cursor = isSaving ? "" : "pointer";

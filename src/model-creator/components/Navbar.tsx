@@ -1,14 +1,19 @@
 import { ROUTES } from '../../router.tsx';
-import { useModelCreator } from '../ModelCreatorContext.ts';
+import { useModelCreator, type ModelCreatorContextData } from '../ModelCreatorContext.ts';
 import ProfileIcon from '../../components/ProfileIcon.tsx';
 import NavLink from '../../components/NavLink.tsx';
 
 import React from 'react';
 
+const contextDataSelector = (data: ModelCreatorContextData) => ({
+    modelName: data.model!.modelName, 
+    setModelName: data.setModelName 
+});
+
 export default function ModelCreatorNavbar() {
     const modelNameRef = React.useRef<HTMLInputElement>(null);
 
-    const { model, setModelName } = useModelCreator();
+    const { modelName, setModelName } = useModelCreator(contextDataSelector);
 
     const submitModelName = () => {
         if (modelNameRef.current === null) return;
@@ -24,7 +29,7 @@ export default function ModelCreatorNavbar() {
                         px-6 py-5 bg-secondary">
 
             <div className="flex items-center text-xl font-bold">
-                <input defaultValue={model.modelName} 
+                <input defaultValue={modelName} 
                        onBlur={submitModelName} 
                        onKeyDown={ (e) => { if (e.key === 'Enter') submitModelName(); } } 
                        ref={modelNameRef} type="text"></input>

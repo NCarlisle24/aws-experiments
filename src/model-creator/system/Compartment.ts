@@ -13,7 +13,6 @@ export const create = (name: string, x: number, y: number, id: CompartmentId): C
     y,
     outTransitions: [],
     inTransitions: [],
-    isInFocus: false
 });
 
 export const addOutTransition = (compartment: Compartment, transition: TransitionId): Compartment => {
@@ -49,13 +48,12 @@ export const removeInTransition = (compartment: Compartment, transition: Transit
 }
 
 export const convertToDbCompartment = (compartment: Compartment): DbCompartment => {
-    const { isInFocus: _, ...dbCompartment} = compartment;
+    const { ...dbCompartment} = compartment;
     return dbCompartment;
 }
 
 export const convertFromDbCompartment = (dbCompartment: DbCompartment): Compartment => {
     return {
         ...dbCompartment,
-        isInFocus: false
     };
 }

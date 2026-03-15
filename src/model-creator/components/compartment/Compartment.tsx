@@ -2,7 +2,7 @@ import React from 'react';
 import { useXarrow } from 'react-xarrows';
 
 import CompartmentTemplate, { type CompartmentTemplateProps } from './CompartmentTemplate';
-import { useModelCreator } from '../../ModelCreatorContext';
+import { useModelCreator, type ModelCreatorContextData } from '../../ModelCreatorContext';
 import { getMousePos } from './CompartmentUtils';
 import { CompartmentLib } from '../../system';
 import { Mode } from '../../enums/Mode';
@@ -14,13 +14,34 @@ export interface CompartmentProps {
     deleteSelf: () => any;
 }
 
+const contextDataSelector = (data: ModelCreatorContextData) => ({
+    canvasRef:                 data.canvasRef,
+    mode:                      data.mode,
+    setMode:                   data.setMode,
+    transitionCreatorStart:    data.transitionCreatorStart,
+    setTransitionCreatorStart: data.setTransitionCreatorStart,
+    setTransitionCreatorEnd:   data.setTransitionCreatorEnd,
+    updateCompartment:         data.updateCompartment,
+    resetFocus:                data.resetFocus,
+    addToFocus:                data.addToFocus
+});
+
 const Compartment = React.forwardRef<CompartmentElement, CompartmentProps>(({ 
     compartment, 
     deleteSelf, 
 }: CompartmentProps, ref) => {
     const updateArrows = useXarrow();
-    const { canvasRef, mode, setMode, transitionCreatorStart, setTransitionCreatorStart, 
-            setTransitionCreatorEnd, updateCompartment, resetFocus, addToFocus } = useModelCreator();
+    const {
+        canvasRef,
+        mode,
+        setMode,
+        transitionCreatorStart,
+        setTransitionCreatorStart,
+        setTransitionCreatorEnd,
+        updateCompartment,
+        resetFocus,
+        addToFocus
+    } = useModelCreator(contextDataSelector);
 
     let cursor = "grab";
     if (Mode.isEqual(mode, Mode.MOVE_COMPARTMENT) || Mode.isEqual(mode, Mode.CREATE_COMPARTMENT)) {
@@ -34,7 +55,7 @@ const Compartment = React.forwardRef<CompartmentElement, CompartmentProps>(({
         name: compartment.name,
         initialX: compartment.x,
         initialY: compartment.y,
-        isInFocus: compartment.isInFocus,
+        isInFocus: false,
         style: {
             position: "absolute",
             cursor
@@ -66,7 +87,7 @@ const Compartment = React.forwardRef<CompartmentElement, CompartmentProps>(({
         name: compartment.name,
         initialX: compartment.x,
         initialY: compartment.y,
-        isInFocus: compartment.isInFocus,
+        isInFocus: false,
         style: {
             position: "absolute",
             cursor

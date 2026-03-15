@@ -6,7 +6,7 @@ import Canvas from './components/Canvas.tsx';
 import ModelCreatorNavbar from './components/Navbar.tsx';
 import { type CompartmentProps } from './components/compartment/Compartment.tsx';
 import { ModelLib, CompartmentLib, TransitionLib, FocusLib } from './system/index.ts';
-import { ModelCreatorContext, type ModelCreatorContextData } from './ModelCreatorContext.ts';
+import { createModelCreatorDataStore, ModelCreatorContext, type ModelCreatorContextData } from './ModelCreatorContext.ts';
 import { Mode } from './enums/Mode.ts';
 import restApi from '../rest-api/restApi.ts';
 import { useAuth } from '../auth/index.ts';
@@ -15,12 +15,6 @@ import './model-creator.css';
 import LargeLoader from '../components/LargeLoader.tsx';
 
 export default function MainController() {
-    const [model, setModel] = React.useState<ModelLib.Model | null>(null)
-    const [mode, setMode] = React.useState<Mode>(Mode.DEFAULT);
-    const [focus, setFocus] = React.useState<FocusLib.Focus>(FocusLib.createFocus());
-    const [transitionCreatorStart, setTransitionCreatorStart] = React.useState<CompartmentLib.CompartmentId | null>(null);
-    const [transitionCreatorEnd, setTransitionCreatorEnd] = React.useState<CompartmentLib.CompartmentId | null>(null);
-
     const canvasRef: ModelCreatorContextData["canvasRef"] = React.useRef(null);
     const compartmentIdRef = React.useRef<CompartmentLib.CompartmentId>(0);
     const transitionIdRef = React.useRef<CompartmentLib.CompartmentId>(0);
@@ -29,81 +23,115 @@ export default function MainController() {
     const { modelId } = useParams();
     const safeModelId = modelId ?? "";
 
-    // helper functions
-
-    const createCompartmentDeleteHandler = (id: CompartmentLib.CompartmentId): CompartmentProps["deleteSelf"] => {
-        return () => {
-            setModel(prev => {
-                if (prev === null) return null;
-                return ModelLib.removeCompartment(prev, id);
-            });
-        }
-    };
-
-    const createCompartment = (name: string, x: number, y: number) => {
-        const newCompartment = CompartmentLib.create(name, x, y, compartmentIdRef.current);
-
-        setModel(prev => {
-            if (prev === null) return null;
-
-            const newModel = ModelLib.addCompartment(prev, newCompartment)
-
-            // TODO: make this incrementation work with react strict mode
-            if (newModel !== prev) compartmentIdRef.current++;
-
-            return newModel;
-        });
-    };
-
-    const updateCompartment = (compartmentId: CompartmentLib.CompartmentId, updates: Partial<CompartmentLib.Compartment>) => {
-        setModel(prev => {
-            if (prev === null) return null;
-            return ModelLib.updateCompartment(prev, compartmentId, updates);
-        });
-    }
-
-    const createTransition = (startId: CompartmentLib.CompartmentId, endId: CompartmentLib.CompartmentId) => {
-        const newTransition = TransitionLib.create(startId, endId, transitionIdRef.current);
-
-        setModel(prev => {
-            if (prev === null) return null;
-
-            const newModel = ModelLib.addTransition(prev, newTransition);
-
-            // TODO: make this incrementation work with react strict mode
-            if (newModel !== prev) transitionIdRef.current++;
-
-            return newModel;
-        })
-    };
-
-    const setModelName = (name: string) => {
-        setModel(prev => {
-            if (prev === null) return null;
-            return {
-                ...prev,
-                modelName: name
-            };
-        });
-
-        if (model !== null) restApi.setUserModelName(authContextData, model.id, name);
-    };
-
-    const addToFocus = (obj: FocusLib.Focusable) => {
-        setFocus(prev => FocusLib.addToFocus(prev, obj));
-    }
-
-    const removeFromFocus = (callbackFn: (obj: FocusLib.Focusable) => boolean) => {
-        setFocus(prev => FocusLib.removeFromFocus(prev, callbackFn));
-    }
-
-    const resetFocus = () => {
-        setFocus(prev => {
-            return FocusLib.resetFocus(prev)
-        });
-    }
-
     // initialize the model
+
+    const modelCreatorDataStore = React.useMemo(() => createModelCreatorDataStore({
+        model: null,
+        mode: Mode.DEFAULT,
+        setMode: (mode: Mode) => {
+            modelCreatorDataStore.setData(prevData => ({ ...prevData, mode }));
+        },
+        canvasRef,
+        createCompartmentDeleteHandler: (id: CompartmentLib.CompartmentId): CompartmentProps["deleteSelf"] => {
+            return () => {
+                modelCreatorDataStore.setData(prevData => {
+                    if (prevData.model === null) return prevData;
+                    return {
+                        ...prevData, 
+                        model: ModelLib.removeCompartment(prevData.model, id),
+                    };
+                });
+            }
+        },
+        createCompartment: (name: string, x: number, y: number) => {
+            modelCreatorDataStore.setData(prevData => {
+                if (prevData.model === null) return prevData;
+
+                const newCompartment = CompartmentLib.create(name, x, y, compartmentIdRef.current++);
+
+                return {
+                    ...prevData,
+                    model: ModelLib.addCompartment(prevData.model, newCompartment),
+                };
+            });
+        },
+        updateCompartment: (
+            compartmentId: CompartmentLib.CompartmentId,
+            updates: Partial<CompartmentLib.Compartment>
+        ) => {
+            modelCreatorDataStore.setData(prevData => {
+                if (prevData.model === null) return prevData;
+
+                return {
+                    ...prevData,
+                    model: ModelLib.updateCompartment(prevData.model, compartmentId, updates),
+                };
+            });
+        },
+        createTransition: (
+            startId: CompartmentLib.CompartmentId,
+            endId: CompartmentLib.CompartmentId
+        ) => {
+            modelCreatorDataStore.setData(prevData => {
+                if (prevData.model === null) return prevData;
+
+                const newTransition = TransitionLib.create(startId, endId, transitionIdRef.current++);
+
+                return {
+                    ...prevData,
+                    model: ModelLib.addTransition(prevData.model, newTransition),
+                };
+            })
+        },
+        transitionCreatorStart: null,
+        transitionCreatorEnd: null,
+        setTransitionCreatorStart: (compartment: CompartmentLib.CompartmentId | null) => {
+            modelCreatorDataStore.setData(prevData => {
+                return {
+                    ...prevData,
+                    transitionCreatorStart: compartment,
+                };
+            })
+        },
+        setTransitionCreatorEnd: (compartment: CompartmentLib.CompartmentId | null) => {
+            modelCreatorDataStore.setData(prevData => {
+                return {
+                    ...prevData,
+                    transitionCreatorEnd: compartment,
+                };
+            })
+        },
+        setModelName: (name: string) => {
+            if (name.length == 0) return;
+            modelCreatorDataStore.setData(prevData => { 
+                if (prevData.model === null) return prevData;
+
+                return {
+                    ...prevData,
+                    model: ModelLib.setName(prevData.model, name),
+                };
+            });
+        },
+        focus: FocusLib.createFocus(),
+        addToFocus: (obj: FocusLib.Focusable) => {
+            modelCreatorDataStore.setData(prevData => ({
+                ...prevData,
+                focus: FocusLib.addToFocus(prevData.focus, obj),
+            }));
+        },
+        removeFromFocus: (callbackFn: ((obj: FocusLib.Focusable) => boolean)) => {
+            modelCreatorDataStore.setData(prevData => ({
+                ...prevData,
+                focus: FocusLib.removeFromFocus(prevData.focus, callbackFn),
+            }));
+        },
+        resetFocus: () => {
+            modelCreatorDataStore.setData(prevData => ({
+                ...prevData,
+                focus: FocusLib.resetFocus(prevData.focus),
+            }));
+        }
+    }), []);
 
     React.useEffect(() => {
         (async () => {
@@ -127,24 +155,26 @@ export default function MainController() {
 
             compartmentIdRef.current = highestCompartmentId + 1;
             transitionIdRef.current = highestTransitionId + 1;
-            setModel(model);
+            modelCreatorDataStore.setData(prevData => ({ ...prevData, model }));
         })();
     }, []);
 
     // wait for model to load
 
-    if (model === null) {
+    // need to manually subscribe to track changes
+    const currentModel = React.useSyncExternalStore(
+        modelCreatorDataStore.subscribe,
+        () => modelCreatorDataStore.getSnapshot().model,
+    );
+
+    if (currentModel === null) {
         return <LargeLoader message="Loading model..."/>;
     }
 
     // render the editor
 
     return (
-        <ModelCreatorContext.Provider value={{
-            model, mode, canvasRef, setMode, createCompartmentDeleteHandler, createCompartment, updateCompartment,
-            createTransition, transitionCreatorStart, transitionCreatorEnd, setTransitionCreatorEnd, 
-            setTransitionCreatorStart, setModelName, focus, addToFocus, removeFromFocus, resetFocus
-        }}>
+        <ModelCreatorContext.Provider value={modelCreatorDataStore}>
             <ModelCreatorNavbar />
             <main className="grid grid-cols-2 h-full w-full" style={{ gridTemplateColumns: "1fr 3fr" }}>
                     <div className="bg-tertiary col-start-1 col-span-1">

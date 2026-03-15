@@ -3,17 +3,34 @@ import { ModelLib, CompartmentLib } from '../system/index.ts';
 import Compartment, { type CompartmentElement } from "./compartment/Compartment.tsx";
 import Transition from "./transition/Transition.tsx";
 import TransitionCreator from './transition/TransitionCreator.tsx';
-import { useModelCreator } from "../ModelCreatorContext.ts";
+import { useModelCreator, type ModelCreatorContextData } from "../ModelCreatorContext.ts";
 import { Mode } from "../enums/Mode.ts";
 
 import React from 'react';
 import { Xwrapper } from "react-xarrows";
 import SaveButton from './SaveButton.tsx';
 
+const contextDataSelector = (data: ModelCreatorContextData) => ({
+    mode:                           data.mode,
+    focus:                          data.focus,
+    model:                          data.model!,
+    createCompartmentDeleteHandler: data.createCompartmentDeleteHandler,
+    transitionCreatorStart:         data.transitionCreatorStart,
+    transitionCreatorEnd:           data.transitionCreatorEnd
+});
+
 const Canvas = React.forwardRef<CompartmentElement>((_, ref) => {
     // states + refs
 
-    const { mode, focus, model, createCompartmentDeleteHandler, transitionCreatorStart, transitionCreatorEnd } = useModelCreator();
+    const { 
+        mode,
+        focus,
+        model,
+        createCompartmentDeleteHandler,
+        transitionCreatorStart,
+        transitionCreatorEnd
+    } = useModelCreator(contextDataSelector);
+
     const compartmentRefs = React.useRef<Map<CompartmentLib.CompartmentId, CompartmentElement>>(new Map());
 
     // function helpers
@@ -68,7 +85,7 @@ const Canvas = React.forwardRef<CompartmentElement>((_, ref) => {
             </Xwrapper>
 
             <a className="absolute right-10 bottom-10 bg-quaternary p-2 rounded-sm cursor-pointer text-center" 
-                onClick={() => { ModelLib.print(model); console.log(JSON.stringify(focus)) }}>
+                onClick={() => { ModelLib.print(model) }}>
                     Debug button<br />
                     (mode='{mode}')
             </a>
