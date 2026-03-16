@@ -9,6 +9,7 @@ import Toolbox from './components/toolbox/Toolbox.tsx';
 import Canvas from './components/Canvas.tsx';
 import ModelCreatorNavbar from './components/Navbar.tsx';
 import LargeLoader from '../components/LargeLoader.tsx';
+import ContextMenu from './components/ContextMenu.tsx';
 
 // context stuff
 
@@ -47,29 +48,22 @@ export default function MainController() {
         transitionCreatorStart: null,
         transitionCreatorEnd:   null,
         focus:                  new Set(),
+        contextMenuIsActive:    false,
+        contextMenuPos:         { x: 0, y: 0},
         canvasRef,
 
         setMode: (mode: Mode) => {
             modelCreatorDataStore.setData(prevData => ({ ...prevData, mode }));
         },
 
-        deleteCompartment: (id: ModelComponentLib.ModelComponentId) => {
-            modelCreatorDataStore.setData(prevData => {
-                if (prevData.model === null) return prevData;
+        createCompartment: (name: string, x?: number, y?: number): ModelComponentLib.ModelComponentId => {
+            const compartmentId = componentIdRef.current++;
 
-                return {
-                    ...prevData, 
-                    model: ModelLib.removeCompartment(prevData.model, id),
-                };
-            });
-        },
-
-        createCompartment: (name: string, x?: number, y?: number) => {
             modelCreatorDataStore.setData(prevData => {
                 if (prevData.model === null) return prevData;
 
                 const newCompartment = CompartmentLib.createCompartment(
-                    componentIdRef.current++,
+                    compartmentId,
                     name,
                     x,
                     y,
@@ -77,43 +71,60 @@ export default function MainController() {
 
                 return {
                     ...prevData,
-                    model: ModelLib.addCompartment(prevData.model, newCompartment),
+                    model: ModelLib.addComponent(prevData.model, newCompartment),
                 };
             });
-        },
 
-        updateCompartment: (
-            id: ModelComponentLib.ModelComponentId,
-            updates: Partial<CompartmentLib.Compartment>
-        ) => {
-            modelCreatorDataStore.setData(prevData => {
-                if (prevData.model === null) return prevData;
-
-                return {
-                    ...prevData,
-                    model: ModelLib.updateCompartment(prevData.model, id, updates),
-                };
-            });
+            return compartmentId;
         },
 
         createTransition: (
             startId: ModelComponentLib.ModelComponentId,
             endId: ModelComponentLib.ModelComponentId,
-        ) => {
+        ): ModelComponentLib.ModelComponentId => {
+            const transitionId = componentIdRef.current++;
+
             modelCreatorDataStore.setData(prevData => {
                 if (prevData.model === null) return prevData;
 
                 const newTransition = TransitionLib.createTransition(
-                    componentIdRef.current++,
+                    transitionId,
                     startId,
                     endId,
                 );
 
                 return {
                     ...prevData,
-                    model: ModelLib.addTransition(prevData.model, newTransition),
+                    model: ModelLib.addComponent(prevData.model, newTransition),
                 };
             })
+
+            return transitionId;
+        },
+
+        deleteComponent: (id: ModelComponentLib.ModelComponentId) => {
+            modelCreatorDataStore.setData(prevData => {
+                if (prevData.model === null) return prevData;
+
+                return {
+                    ...prevData, 
+                    model: ModelLib.removeComponent(prevData.model, id),
+                };
+            });
+        },
+
+        updateComponent: (
+            id: ModelComponentLib.ModelComponentId,
+            updates: Partial<ModelComponentLib.ModelComponent>
+        ) => {
+            modelCreatorDataStore.setData(prevData => {
+                if (prevData.model === null) return prevData;
+
+                return {
+                    ...prevData,
+                    model: ModelLib.updateComponent(prevData.model, id, updates),
+                };
+            });
         },
 
         setTransitionCreatorStart: (compartmentId: ModelComponentLib.ModelComponentId | null) => {
@@ -190,8 +201,25 @@ export default function MainController() {
                 ...prevData,
                 focus: new Set()
             }));
+        },
+
+        showContextMenu: (x: number, y: number) => {
+            modelCreatorDataStore.setData(prevData => ({
+                ...prevData,
+                contextMenuIsActive: true,
+                contextMenuPos: { x, y },
+            }));
+        },
+        
+        hideContextMenu: () => {
+            modelCreatorDataStore.setData(prevData => ({
+                ...prevData,
+                contextMenuIsActive: false
+            }));
         }
     }), []);
+
+    // initialize model
 
     React.useEffect(() => {
         (async () => {
@@ -230,13 +258,18 @@ export default function MainController() {
     return (
         <ModelCreatorContext.Provider value={modelCreatorDataStore}>
             <ModelCreatorNavbar />
-            <main className="grid grid-cols-2 h-full w-full" style={{ gridTemplateColumns: "1fr 3fr" }}>
-                    <div className="bg-tertiary col-start-1 col-span-1">
-                        <Toolbox></Toolbox>
-                    </div>
-                    <div className="col-start-2 col-span-1 bg-model-creator-canvas">
-                        <Canvas ref={canvasRef}></Canvas>
-                    </div>
+            <main className="grid grid-cols-2 h-full w-full" style={{ gridTemplateColumns: "1fr 3fr" }}
+                    onContextMenu={(e) => e.preventDefault()}>
+
+                <div className="bg-tertiary col-start-1 col-span-1">
+                    <Toolbox></Toolbox>
+                </div>
+                <div className="col-start-2 col-span-1 bg-model-creator-canvas">
+                    <Canvas ref={canvasRef}></Canvas>
+                </div>
+
+                <ContextMenu />
+
             </main>
         </ModelCreatorContext.Provider>
 )

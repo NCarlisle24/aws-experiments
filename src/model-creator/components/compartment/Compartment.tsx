@@ -25,12 +25,14 @@ const Compartment = React.forwardRef<CompartmentElement, CompartmentProps>(({
         mode:                      data.mode,
         transitionCreatorStart:    data.transitionCreatorStart,
         compartment:               data.model!.compartments.get(compartmentId)!,
+        isInFocus:                 data.focus.has(compartmentId),
         setMode:                   data.setMode,
         setTransitionCreatorStart: data.setTransitionCreatorStart,
         setTransitionCreatorEnd:   data.setTransitionCreatorEnd,
-        updateCompartment:         data.updateCompartment,
+        updateComponent:           data.updateComponent,
         resetFocus:                data.resetFocus,
         addToFocus:                data.addToFocus,
+        showContextMenu:           data.showContextMenu,
     }), [compartmentId]);
 
     const {
@@ -38,12 +40,14 @@ const Compartment = React.forwardRef<CompartmentElement, CompartmentProps>(({
         mode,
         transitionCreatorStart,
         compartment,
+        isInFocus,
         setMode,
         setTransitionCreatorStart,
         setTransitionCreatorEnd,
-        updateCompartment,
+        updateComponent,
         resetFocus,
-        addToFocus
+        addToFocus,
+        showContextMenu,
     } = useModelCreator(contextDataSelector);
 
     let cursor = "grab";
@@ -58,16 +62,13 @@ const Compartment = React.forwardRef<CompartmentElement, CompartmentProps>(({
         name: compartment.name,
         initialX: compartment.x,
         initialY: compartment.y,
-        isInFocus: false,
+        isInFocus,
         style: {
             position: "absolute",
             cursor
         },
         onPickup: () => {
             setMode(Mode.MOVE_COMPARTMENT);
-
-            resetFocus();
-            addToFocus(compartmentId);
         },
         onRelease: (e, x, y) => {
             setMode(Mode.SELECT);
@@ -80,17 +81,24 @@ const Compartment = React.forwardRef<CompartmentElement, CompartmentProps>(({
                 return;
             }
 
-            updateCompartment(compartmentId, { x, y });
+            updateComponent(compartmentId, { x, y });
         },
         onDrag: () => {
             updateArrows();
         },
+        onMouseDown: (e) => {
+            resetFocus();
+            addToFocus(compartmentId);
+
+            // if it's a right click, show the context menu
+            if (e.button == 2) showContextMenu(e.clientX, e.clientY);
+        }
     } : {
         isDraggable: false,
         name: compartment.name,
         initialX: compartment.x,
         initialY: compartment.y,
-        isInFocus: false,
+        isInFocus,
         style: {
             position: "absolute",
             cursor

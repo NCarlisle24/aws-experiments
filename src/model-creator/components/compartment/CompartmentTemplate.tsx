@@ -17,6 +17,7 @@ export interface CompartmentTemplateProps {
     onMouseUp?: (e: React.MouseEvent) => any;
     onMouseEnter?: (e: React.MouseEvent) => any;
     onMouseLeave?: (e: React.MouseEvent) => any;
+    onMouseDown?: (e: React.MouseEvent) => any;
 }
 
 // TODO: move delete self into a user-defined onRelease
@@ -32,9 +33,10 @@ const CompartmentTemplate = React.forwardRef<HTMLDivElement, CompartmentTemplate
         onPickup, 
         onDrag, 
         onRelease, 
-        onMouseUp ,
+        onMouseUp,
         onMouseEnter,
-        onMouseLeave
+        onMouseLeave,
+        onMouseDown,
     }: CompartmentTemplateProps,
     ref
 ) => {
@@ -46,7 +48,14 @@ const CompartmentTemplate = React.forwardRef<HTMLDivElement, CompartmentTemplate
     }, [pos])
 
     // todo: memoize this click handler?
-    const handleLeftMouseDown = (e: React.MouseEvent) => {
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (onMouseDown) onMouseDown(e);
+
+        // check for non-left click
+        if (e.button != 0) {
+            return;
+        }
+
         if (onPickup) onPickup(e.nativeEvent);
 
         const initialCompartmentPos = { ...pos };
@@ -87,7 +96,7 @@ const CompartmentTemplate = React.forwardRef<HTMLDivElement, CompartmentTemplate
                 ...shadowStyle,
                 ...style 
             }} 
-             onMouseDown={handleLeftMouseDown} ref={ref} onMouseUp={onMouseUp} onMouseEnter={onMouseEnter}
+             onMouseDown={handleMouseDown} ref={ref} onMouseUp={onMouseUp} onMouseEnter={onMouseEnter}
              onMouseLeave={onMouseLeave}>
             {name}
         </div>

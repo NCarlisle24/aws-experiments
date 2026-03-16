@@ -1,4 +1,4 @@
-import { type ModelComponent, type ModelComponentId } from "./components/ModelComponent";
+import { ModelComponentType, type ModelComponent, type ModelComponentId } from "./components/ModelComponent";
 import type { Compartment } from "./components/Compartment";
 import type { Transition } from "./components/Transition";
 import type { DbModel, ModelId } from '../../../amplify/data/tables';
@@ -18,189 +18,290 @@ export interface Model {
     readonly transitions:    ReadonlyMap<ModelComponentId, Transition>,
 };
 
-export const addCompartment = (model: Model, compartment: Compartment): Model => {
-    // the added compartment cannot have existing transitions
-    if (model.components.has(compartment.id)
-        || compartment.inTransitions.size > 0
-        || compartment.outTransitions.size > 0
-    ) {
-        return model;
+const MODEL_COMPONENT_TYPE_MAP = {
+    [ModelComponentType.COMPARTMENT]: {
+        add: (model: Model, compartment: Compartment): Model => {
+            // the added compartment cannot have existing transitions
+            if (model.components.has(compartment.id)
+                || compartment.inTransitions.size > 0
+                || compartment.outTransitions.size > 0
+            ) {
+                return model;
+            }
+
+            const newComponents = new Map(model.components);
+            newComponents.set(compartment.id, compartment);
+
+            const newModel: Model = {
+                ...model,
+                components: newComponents,
+            };
+
+            return updateSubmaps(newModel);
+        },
+
+        remove: (model: Model, compartmentId: ModelComponentId): Model => {
+            const compartment = model.compartments.get(compartmentId);
+            if (!compartment) return model;
+
+            // remove transitions
+
+            const transitionIdsToRemove = [ ...compartment.inTransitions, ...compartment.outTransitions ];
+            for (const idToRemove of transitionIdsToRemove) {
+                model = MODEL_COMPONENT_TYPE_MAP[ModelComponentType.TRANSITION].remove(model, idToRemove);
+            }
+
+            // remove compartment
+
+            const newComponents = new Map(model.components);
+            newComponents.delete(compartmentId);
+
+            // return
+
+            const newModel: Model = {
+                ...model,
+                components: newComponents,
+            };
+
+            return updateSubmaps(newModel);
+        },
+
+        update: (model: Model, compartmentId: ModelComponentId, updates: Partial<Compartment>): Model => {
+            const prevCompartment = model.compartments.get(compartmentId);
+            if (!prevCompartment) return model;
+
+            // update compartment
+
+            const newCompartment = { ...prevCompartment, ...updates };
+
+            const newComponents = new Map(model.components);
+            newComponents.set(compartmentId, newCompartment);
+
+            // return
+
+            const newModel: Model = {
+                ...model,
+                components: newComponents,
+            };
+
+            return updateSubmaps(newModel);
+        }
+    },
+
+    [ModelComponentType.TRANSITION]: {
+        add: (model: Model, transition: Transition): Model => {
+            // rules: 
+            // - transition must have a unique id
+            // - the start and end must both be compartments
+            // - both compartments need to exist in the model
+            // - compartments must be unique
+            // - an equivalent transition cannot already exist
+
+            // unique ID
+
+            if (model.components.has(transition.id)) return model;
+
+            // check start and end
+
+            const startId = transition.start;
+            const start = model.compartments.get(startId);
+
+            const endId = transition.end;
+            const end = model.compartments.get(endId);
+
+            if (!start || !end || startId === endId) return model;
+
+            // check for an equivalent transition
+
+            for (const existingTransitionId of start.outTransitions) {
+                const currTransition = model.transitions.get(existingTransitionId)!;
+                if (currTransition.end === endId) return model;
+            }
+
+            // tests passed; can connect transition
+
+            const newComponents = new Map(model.components);
+
+            const newStartCompartment = CompartmentLib.addOutTransition(start, transition.id);
+            const newEndCompartment = CompartmentLib.addInTransition(end, transition.id);
+
+            newComponents.set(startId, newStartCompartment);
+            newComponents.set(endId, newEndCompartment);
+            newComponents.set(transition.id, transition);
+
+            // return
+
+            const newModel: Model = {
+                ...model,
+                components: newComponents,
+            };
+
+            return updateSubmaps(newModel);
+        },
+
+        remove: (model: Model, transitionId: ModelComponentId): Model => {
+            const transition = model.transitions.get(transitionId);
+            if (!transition) return model;
+
+            const startId = transition.start;
+            const endId = transition.end;
+            const start = model.compartments.get(startId)!;
+            const end = model.compartments.get(endId)!;
+
+            // update components
+
+            const newComponents = new Map(model.components);
+
+            const newStartCompartment = CompartmentLib.removeOutTransition(start, transitionId);
+            const newEndCompartment = CompartmentLib.removeInTransition(end, transitionId);
+
+            newComponents.delete(transitionId);
+            newComponents.set(startId, newStartCompartment);
+            newComponents.set(endId, newEndCompartment);
+
+            // return
+
+            const newModel: Model = {
+                ...model,
+                components:   newComponents,
+            };
+
+            return updateSubmaps(newModel);
+        },
+
+        update: (model: Model, transitionId: ModelComponentId, updates: Partial<Transition>): Model => {
+            const prevTransition = model.transitions.get(transitionId);
+            if (!prevTransition) return model;
+
+            // update transition
+
+            const newTransition = { ...prevTransition, ...updates };
+
+            const newComponents = new Map(model.components);
+            newComponents.set(transitionId, newTransition);
+
+            // return
+
+            const newModel: Model = {
+                ...model,
+                components: newComponents,
+            };
+
+            return updateSubmaps(newModel);
+        }
+    },
+
+    [ModelComponentType.UNKNOWN]: {
+        add: (model: Model, component: ModelComponent): Model => {
+            if (model.components.has(component.id)) return model;
+
+            const newComponents = new Map(model.components);
+            newComponents.set(component.id, component);
+
+            const newModel: Model = {
+                ...model,
+                components: newComponents,
+            };
+
+            return updateSubmaps(newModel);
+        },
+
+        remove: (model: Model, componentId: ModelComponentId): Model => {
+            if (!model.components.has(componentId)) return model;
+
+            const newComponents = new Map(model.components);
+            newComponents.delete(componentId);
+
+            const newModel: Model = {
+                ...model,
+                components: newComponents,
+            };
+
+            return updateSubmaps(newModel);
+        },
+
+        update: <C = ModelComponent>(model: Model, componentId: ModelComponentId, updates: Partial<C>): Model => {
+            const component = model.components.get(componentId);
+            if (!component) return model;
+
+            const newComponent: ModelComponent = {
+                ...component,
+                ...updates,
+            };
+
+            const newComponents = new Map(model.components);
+            newComponents.set(componentId, newComponent);
+
+            const newModel: Model = {
+                ...model,
+                components: newComponents
+            };
+
+            return updateSubmaps(newModel);
+        },
+    },
+} as const;
+
+const updateSubmaps = (model: Model): Model => {
+    const newCompartments: Map<ModelComponentId, Compartment> = new Map();
+    const newTransitions: Map<ModelComponentId, Transition> = new Map();
+
+    model.components.forEach((component, componentId) => {
+        if (component.type === ModelComponentType.COMPARTMENT) {
+            newCompartments.set(componentId, component as Compartment);
+        } else if (component.type === ModelComponentType.TRANSITION) {
+            newTransitions.set(componentId, component as Transition);
+        }
+    });
+
+    return {
+        ...model,
+        compartments: newCompartments,
+        transitions: newTransitions,
+    };
+}
+
+export const addComponent = (model: Model, component: ModelComponent): Model => {
+    // typescript gives errors if I try to access the table, so we'll directly call the
+    // functions for now
+
+    // TODO: resolve open/closed violation here
+
+    if (component.type === ModelComponentType.COMPARTMENT) {
+        return MODEL_COMPONENT_TYPE_MAP[ModelComponentType.COMPARTMENT].add(model, component as Compartment);
     }
 
-    const newComponents = new Map(model.components);
-    newComponents.set(compartment.id, compartment);
-
-    const newCompartments = new Map(model.compartments);
-    newCompartments.set(compartment.id, compartment);
-
-    return {
-        ...model,
-        components: newComponents,
-        compartments: newCompartments,
-    };
-}
-
-export const addTransition = (model: Model, transition: Transition): Model => {
-    // rules: 
-    // - transition must have a unique id
-    // - the start and end must both be compartments
-    // - both compartments need to exist in the model
-    // - compartments must be unique
-    // - an equivalent transition cannot already exist
-
-    // unique ID
-
-    if (model.transitions.has(transition.id)) return model;
-
-    // check start and end
-
-    const startId = transition.start;
-    const start = model.compartments.get(startId);
-
-    const endId = transition.end;
-    const end = model.compartments.get(endId);
-
-    if (!start || !end || startId === endId) return model;
-
-    // check for an equivalent transition
-
-    for (const existingTransitionId of start.outTransitions) {
-        const currTransition = model.transitions.get(existingTransitionId)!;
-        if (currTransition.end === endId) return model;
+    if (component.type === ModelComponentType.TRANSITION) {
+        return MODEL_COMPONENT_TYPE_MAP[ModelComponentType.TRANSITION].add(model, component as Transition);
     }
 
-    // tests passed; can connect transition
+    return MODEL_COMPONENT_TYPE_MAP[ModelComponentType.UNKNOWN].add(model, component);
+};
 
-    // compartments
+export const removeComponent = (model: Model, componentId: ModelComponentId): Model => {
+    const component = model.components.get(componentId);
+    if (!component) return model;
 
-    const newCompartments = new Map(model.compartments);
+    const componentFunctions = MODEL_COMPONENT_TYPE_MAP[component.type];
 
-    const newStartCompartment = CompartmentLib.addOutTransition(start, transition.id);
-    const newEndCompartment = CompartmentLib.addInTransition(end, transition.id);
-
-    newCompartments.set(startId, newStartCompartment);
-    newCompartments.set(endId, newEndCompartment);
-
-    // transition
-
-    const newTransitions = new Map(model.transitions);
-
-    newTransitions.set(transition.id, transition);
-
-    // components
-
-    const newComponents = new Map(model.components);
-
-    newComponents.set(startId, newStartCompartment);
-    newComponents.set(endId, newEndCompartment);
-    newComponents.set(transition.id, transition);
-
-    // return
-
-    return {
-        ...model,
-        components:   newComponents,
-        compartments: newCompartments,
-        transitions:  newTransitions
-    };
-
-}
-
-export const removeTransition = (model: Model, id: ModelComponentId): Model => {
-    const transition = model.transitions.get(id);
-    if (!transition) return model;
-
-    const startId = transition.start;
-    const endId = transition.end;
-    const start = model.compartments.get(startId)!;
-    const end = model.compartments.get(endId)!;
-
-    // transition
-
-    const newTransitions = new Map(model.transitions);
-    newTransitions.delete(id);
-
-    // compartments
-
-    const newCompartments = new Map(model.compartments);
-
-    const newStartCompartment = CompartmentLib.removeOutTransition(start, id);
-    const newEndCompartment = CompartmentLib.removeInTransition(end, id);
-
-    newCompartments.set(startId, newStartCompartment);
-    newCompartments.set(endId, newEndCompartment);
-
-    // components
-
-    const newComponents = new Map(model.components);
-
-    newComponents.delete(id);
-    newComponents.set(startId, newStartCompartment);
-    newComponents.set(endId, newEndCompartment);
-
-    // return
-
-    return {
-        ...model,
-        components:   newComponents,
-        compartments: newCompartments,
-        transitions:  newTransitions,
-    };
-}
-
-export const removeCompartment = (model: Model, id: ModelComponentId): Model => {
-    const compartment = model.compartments.get(id);
-    if (!compartment) return model;
-
-    // remove transitions
-
-    const transitionIdsToRemove = [ ...compartment.inTransitions, ...compartment.outTransitions ];
-    for (const idToRemove of transitionIdsToRemove) {
-        model = removeTransition(model, idToRemove);
+    if (!componentFunctions) {
+        return MODEL_COMPONENT_TYPE_MAP[ModelComponentType.UNKNOWN].remove(model, componentId);
     }
 
-    // remove compartment
+    return componentFunctions.remove(model, componentId);
+};
 
-    const newCompartments = new Map(model.compartments);
-    newCompartments.delete(id);
+export const updateComponent = (model: Model, componentId: ModelComponentId, updates: Partial<ModelComponent>): Model => {
+    const component = model.components.get(componentId);
+    if (!component) return model;
 
-    const newComponents = new Map(model.components);
-    newComponents.delete(id);
+    const componentFunctions = MODEL_COMPONENT_TYPE_MAP[component.type];
 
-    // return
+    if (!componentFunctions) {
+        return MODEL_COMPONENT_TYPE_MAP[ModelComponentType.UNKNOWN].update(model, componentId, updates);
+    }
 
-    const newModel: Model = {
-        ...model,
-        components:   newComponents,
-        compartments: newCompartments,
-    };
-
-    return newModel;
-}
-
-export const updateCompartment = (model: Model, id: ModelComponentId, updates: Partial<Compartment>): Model => {
-    const prevCompartment = model.compartments.get(id);
-    if (!prevCompartment) return model;
-
-    // update compartment
-
-    const newCompartment = { ...prevCompartment, ...updates };
-
-    const newCompartments = new Map(model.compartments);
-    newCompartments.set(id, newCompartment);
-
-    // update components
-
-    const newComponents = new Map(model.components);
-    newComponents.set(id, newCompartment);
-
-    // return
-
-    return {
-        ...model,
-        components:   newComponents,
-        compartments: newCompartments,
-    };
+    return componentFunctions.update(model, componentId, updates);
 }
 
 export const setName = (model: Model, name: string): Model => {

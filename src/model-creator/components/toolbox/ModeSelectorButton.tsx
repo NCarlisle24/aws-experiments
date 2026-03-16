@@ -6,16 +6,18 @@ import { Mode } from '../../enums/Mode';
 interface ModeSelectorButtonProps {
     mode: Mode,
     activeModes: Mode[],
+    resetFocusOnEnter: boolean,
     children: React.ReactNode
 }
 
 const contextDataSelector = (data: ModelCreatorContextData) => ({
     currentMode: data.mode,
-    setMode: data.setMode 
+    setMode:     data.setMode,
+    resetFocus:  data.resetFocus,
 });
 
-export default function ModeSelectorButton({ mode, activeModes, children }: ModeSelectorButtonProps) {
-    const { currentMode, setMode } = useModelCreator(contextDataSelector);
+export default function ModeSelectorButton({ mode, activeModes, resetFocusOnEnter, children }: ModeSelectorButtonProps) {
+    const { currentMode, setMode, resetFocus } = useModelCreator(contextDataSelector);
 
     let isActive = false;
     for (const activeMode of activeModes) {
@@ -27,6 +29,7 @@ export default function ModeSelectorButton({ mode, activeModes, children }: Mode
 
     const onClick = () => {
         setMode(mode);
+        if (resetFocusOnEnter) resetFocus();
     }
 
     const style: React.CSSProperties = {

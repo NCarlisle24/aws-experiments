@@ -2,7 +2,7 @@ import type { DbCompartment } from '../../../../amplify/data/tables.ts';
 
 import * as ModelComponentLib from './ModelComponent.ts'
 
-export interface Compartment extends ModelComponentLib.ModelComponent {
+export interface Compartment extends ModelComponentLib.BaseModelComponent {
     readonly name: string,
     readonly x: number,
     readonly y: number,

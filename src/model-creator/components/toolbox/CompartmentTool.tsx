@@ -11,17 +11,21 @@ interface CompartmentToolProps {
 
 const contextDataSelector = (data: ModelCreatorContextData) => ({
     canvasRef:         data.canvasRef,
-    createCompartment: data.createCompartment,
     mode:              data.mode,
-    setMode:           data.setMode
+    createCompartment: data.createCompartment,
+    setMode:           data.setMode,
+    addToFocus:        data.addToFocus,
+    resetFocus:        data.resetFocus
 });
 
 export default function CompartmentTool({ name }: CompartmentToolProps) {
     const {
         canvasRef,
-        createCompartment,
         mode,
-        setMode
+        createCompartment,
+        setMode,
+        addToFocus,
+        resetFocus
     } = useModelCreator(contextDataSelector);
 
     const compartmentCreatorRef = React.useRef<HTMLDivElement>(null);
@@ -41,6 +45,7 @@ export default function CompartmentTool({ name }: CompartmentToolProps) {
         },
         onPickup: () => {
             setMode(Mode.CREATE_COMPARTMENT);
+            resetFocus();
         },
         onRelease: (e, _x, _y, setPos) => {
             setMode(Mode.SELECT);
@@ -54,7 +59,14 @@ export default function CompartmentTool({ name }: CompartmentToolProps) {
                 && mousePos.y <= canvasRect.bottom && mousePos.y >= canvasRect.top)
             {
                 const fixedPos = compartmentCreatorRef.current!.getBoundingClientRect();
-                createCompartment(name, fixedPos.left - canvasRect.left, fixedPos.top - canvasRect.top);
+
+                const newCompartmentId = createCompartment(
+                    name,
+                    fixedPos.left - canvasRect.left,
+                    fixedPos.top - canvasRect.top
+                );
+
+                addToFocus(newCompartmentId);
             }
 
             setPos({ x: 0, y: 0 });

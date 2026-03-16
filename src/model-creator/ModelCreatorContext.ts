@@ -13,8 +13,10 @@ export interface ModelCreatorContextData {
     readonly mode:                      Mode;
     readonly focus:                     Focus;
     readonly canvasRef:                 React.RefObject<HTMLDivElement | null>;
-    readonly transitionCreatorStart:    ModelComponentLib.ModelComponentId | null,
-    readonly transitionCreatorEnd:      ModelComponentLib.ModelComponentId | null,
+    readonly transitionCreatorStart:    ModelComponentLib.ModelComponentId | null;
+    readonly transitionCreatorEnd:      ModelComponentLib.ModelComponentId | null;
+    readonly contextMenuIsActive:       boolean;
+    readonly contextMenuPos:            { x: number, y: number };
 
     readonly setMode:                   (mode: Mode) => any;
 
@@ -24,13 +26,16 @@ export interface ModelCreatorContextData {
 
     readonly setModelName:              (name: string) => any;
 
-    readonly deleteCompartment:         (id: ModelComponentLib.ModelComponentId) => any;
-    readonly createCompartment:         (name: string, x: number, y: number) => any;
-    readonly updateCompartment:         (id: ModelComponentLib.ModelComponentId, updates: Partial<CompartmentLib.Compartment>) => any,
+    readonly createCompartment:         (name: string, x: number, y: number) => ModelComponentLib.ModelComponentId;
+    readonly createTransition:          (startId: ModelComponentLib.ModelComponentId, endId: ModelComponentLib.ModelComponentId) => ModelComponentLib.ModelComponentId;
+    readonly deleteComponent:           (id: ModelComponentLib.ModelComponentId) => any;
+    readonly updateComponent:           (id: ModelComponentLib.ModelComponentId, updates: Partial<CompartmentLib.Compartment>) => any,
 
-    readonly createTransition:          (startId: ModelComponentLib.ModelComponentId, endId: ModelComponentLib.ModelComponentId) => any;
     readonly setTransitionCreatorStart: (compartmentId: ModelComponentLib.ModelComponentId | null) => any,
     readonly setTransitionCreatorEnd:   (compartmentId: ModelComponentLib.ModelComponentId | null) => any,
+
+    readonly showContextMenu:           (x: number, y: number) => any;
+    readonly hideContextMenu:           () => any;
 }
 
 // data store

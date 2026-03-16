@@ -11,12 +11,13 @@ import { Xwrapper } from "react-xarrows";
 import SaveButton from './SaveButton.tsx';
 
 const contextDataSelector = (data: ModelCreatorContextData) => ({
-    mode:                           data.mode,
-    compartmentIds:                 [...data.model!.compartments.keys()],
-    transitionIds:                  [...data.model!.transitions.keys()],
-    transitionCreatorStart:         data.transitionCreatorStart,
-    transitionCreatorEnd:           data.transitionCreatorEnd,
-    deleteCompartment:              data.deleteCompartment,
+    mode:                   data.mode,
+    compartmentIds:         [...data.model!.compartments.keys()],
+    transitionIds:          [...data.model!.transitions.keys()],
+    transitionCreatorStart: data.transitionCreatorStart,
+    transitionCreatorEnd:   data.transitionCreatorEnd,
+    deleteComponent:      data.deleteComponent,
+    resetFocus:             data.resetFocus
 });
 
 const Canvas = React.forwardRef<CompartmentElement>((_, ref) => {
@@ -26,9 +27,10 @@ const Canvas = React.forwardRef<CompartmentElement>((_, ref) => {
         mode,
         compartmentIds,
         transitionIds,
-        deleteCompartment,
         transitionCreatorStart,
-        transitionCreatorEnd
+        transitionCreatorEnd,
+        deleteComponent,
+        resetFocus,
     } = useModelCreator(contextDataSelector);
 
     const compartmentRefs = React.useRef<Map<ModelComponentLib.ModelComponentId, CompartmentElement>>(new Map());
@@ -52,17 +54,21 @@ const Canvas = React.forwardRef<CompartmentElement>((_, ref) => {
     }
 
     const style: React.CSSProperties = {
-        cursor
+        cursor,
     };
 
     return (
         <div className="relative top-0 left-0 w-full h-full" style={style} ref={ref}>
+            {/* canvas background */}
+            <div className="w-full h-full absolute" onMouseDown={resetFocus}></div>
+
+            {/* Compartments + transitions */}
             <Xwrapper>
                 {compartmentIds.map((id) => 
                     <Compartment 
                         key={id} 
                         compartmentId={id}
-                        deleteSelf={() => deleteCompartment(id)}
+                        deleteSelf={() => deleteComponent(id)}
                         ref={(el: CompartmentElement) => {
                             if (el) {
                                 compartmentRefs.current.set(id, el);

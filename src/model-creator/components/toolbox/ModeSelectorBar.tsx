@@ -4,7 +4,7 @@ import { Mode } from "../../enums/Mode";
 export default function ModeSelectorBar() {
     return (
         <div className="flex justify-center items-stretch gap-3 w-full mx-3">
-            <ModeSelectorButton mode={Mode.SELECT} 
+            <ModeSelectorButton mode={Mode.SELECT} resetFocusOnEnter={false}
                                 activeModes={[Mode.SELECT, Mode.CREATE_COMPARTMENT, Mode.MOVE_COMPARTMENT]}>
                 <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
                     viewBox="-2 0 28 28" enableBackground="new 0 0 28 28" xmlSpace="preserve">
@@ -15,7 +15,7 @@ export default function ModeSelectorBar() {
                 </svg>
             </ModeSelectorButton>
 
-            <ModeSelectorButton mode={Mode.CREATE_TRANSITION} activeModes={[Mode.CREATE_TRANSITION]}>
+            <ModeSelectorButton mode={Mode.CREATE_TRANSITION} resetFocusOnEnter={true} activeModes={[Mode.CREATE_TRANSITION]}>
                 create transition
             </ModeSelectorButton>
         </div>

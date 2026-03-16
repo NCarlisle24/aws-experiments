@@ -12,12 +12,35 @@ export interface TransitionProps {
 
 export default function Transition({ transitionId, getCompartmentRef }: TransitionProps) {
     const contextDataSelector = React.useCallback((data: ModelCreatorContextData) => ({
-        transition: data.model!.transitions.get(transitionId)!
+        transition:      data.model!.transitions.get(transitionId)!,
+        isInFocus:       data.focus.has(transitionId),
+        resetFocus:      data.resetFocus,
+        addToFocus:      data.addToFocus,
+        showContextMenu: data.showContextMenu,
     }), [transitionId]);
 
-    const { transition } = useModelCreator(contextDataSelector);
+    const {
+        transition,
+        isInFocus,
+        resetFocus,
+        addToFocus,
+        showContextMenu
+    } = useModelCreator(contextDataSelector);
+
+    const style: React.CSSProperties = {
+        cursor: "pointer",
+        // shadow: isInFocus ? "0px 0px 10px rgba(0, 0, 100, 0.5)" : "",
+        filter: isInFocus ? "drop-shadow(0px 0px 5px rgba(0, 0, 100, 0.5))" : "",
+    };
+
+    const handleMouseDown = React.useCallback((e: React.MouseEvent) => {
+        resetFocus();
+        addToFocus(transitionId); 
+        if (e.button == 2) showContextMenu(e.clientX, e.clientY);
+    }, [transitionId, resetFocus, addToFocus, showContextMenu]);
 
     return (
-        <Xarrow start={getCompartmentRef(transition.start)} end={getCompartmentRef(transition.end)} path="straight"/>
+        <Xarrow start={getCompartmentRef(transition.start)} end={getCompartmentRef(transition.end)} path="straight"
+                passProps={{ style, onMouseDown: handleMouseDown }}/>
     );
 }

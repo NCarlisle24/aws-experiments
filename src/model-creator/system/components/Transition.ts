@@ -3,7 +3,7 @@ import * as ModelComponentLib from './ModelComponent.ts';
 
 type TransitionWeight = string;
 
-export interface Transition extends ModelComponentLib.ModelComponent { 
+export interface Transition extends ModelComponentLib.BaseModelComponent { 
     start: ModelComponentLib.ModelComponentId,
     end: ModelComponentLib.ModelComponentId,
     weight: TransitionWeight,
