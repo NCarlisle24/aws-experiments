@@ -3,15 +3,17 @@ import { useModelCreator, type ModelCreatorContextData } from "../ModelCreatorCo
 import ContextMenuButton from "./ContextMenuButton";
 
 const contextDataSelector = (data: ModelCreatorContextData) => ({
-    isActive: data.contextMenuIsActive,
-    pos:      data.contextMenuPos,
-    focus:    data.focus,
-    hideMenu: data.hideContextMenu
+    isActive:        data.contextMenuIsActive,
+    pos:             data.contextMenuPos,
+    focus:           data.focus,
+    hideMenu:        data.hideContextMenu,
+    deleteComponent: data.deleteComponent,
+    resetFocus:      data.resetFocus,
 });
 
 export default function ContextMenu() {
     const menuRef = React.useRef<HTMLDivElement>(null);
-    const { isActive, pos, focus, hideMenu } = useModelCreator(contextDataSelector);
+    const { isActive, pos, focus, hideMenu, deleteComponent, resetFocus } = useModelCreator(contextDataSelector);
     const focusedComponentIds = React.useMemo(() => Array.from(focus), [focus]);
 
     const style: React.CSSProperties = {
@@ -43,8 +45,16 @@ export default function ContextMenu() {
     
     // button handlers
 
-    const deleteComponents = React.useCallback(() => {
+    const deleteSelectedComponents = React.useCallback(() => {
         if (focusedComponentIds.length == 0) return;
+
+        const idsToDelete = [...focusedComponentIds];
+
+        for (const idToDelete of idsToDelete) {
+            deleteComponent(idToDelete);
+        }
+
+        resetFocus();
 
     }, [focusedComponentIds]);
 
@@ -65,9 +75,7 @@ export default function ContextMenu() {
     return (
         <div className="fixed text-black bg-white border-black border z-2048 p-2 w-60"
              style={style} ref={menuRef}>
-            <ContextMenuButton onClick={() => {}}>context menu button</ContextMenuButton>
-            <ContextMenuButton onClick={() => {}}>context menu button</ContextMenuButton>
-            <ContextMenuButton onClick={() => {}}>context menu button</ContextMenuButton>
+            <ContextMenuButton onClick={deleteSelectedComponents}>Delete selected</ContextMenuButton>
         </div>
     );
 }

@@ -11,12 +11,15 @@ export interface TransitionProps {
 };
 
 export default function Transition({ transitionId, getCompartmentRef }: TransitionProps) {
+    const weightInputRef = React.useRef<HTMLInputElement>(null);
+
     const contextDataSelector = React.useCallback((data: ModelCreatorContextData) => ({
         transition:      data.model!.transitions.get(transitionId)!,
         isInFocus:       data.focus.has(transitionId),
         resetFocus:      data.resetFocus,
         addToFocus:      data.addToFocus,
         showContextMenu: data.showContextMenu,
+        updateComponent: data.updateComponent,
     }), [transitionId]);
 
     const {
@@ -24,7 +27,8 @@ export default function Transition({ transitionId, getCompartmentRef }: Transiti
         isInFocus,
         resetFocus,
         addToFocus,
-        showContextMenu
+        showContextMenu,
+        updateComponent,
     } = useModelCreator(contextDataSelector);
 
     const style: React.CSSProperties = {
@@ -36,11 +40,40 @@ export default function Transition({ transitionId, getCompartmentRef }: Transiti
     const handleMouseDown = React.useCallback((e: React.MouseEvent) => {
         resetFocus();
         addToFocus(transitionId); 
-        if (e.button == 2) showContextMenu(e.clientX, e.clientY);
+
+        if (e.button == 2) {
+            showContextMenu(e.clientX, e.clientY)
+            weightInputRef.current?.blur();
+        };
     }, [transitionId, resetFocus, addToFocus, showContextMenu]);
+
+    const submitTransitionWeight = () => {
+        if (weightInputRef.current === null) return;
+        weightInputRef.current.blur();
+
+        const currentValue = weightInputRef.current.value;
+
+        if (currentValue.length == 0) {
+            weightInputRef.current.value = "0";
+            updateComponent(transitionId, { weight: "0" });
+            return;
+        }
+
+        updateComponent(transitionId, { weight: currentValue });
+    }
 
     return (
         <Xarrow start={getCompartmentRef(transition.start)} end={getCompartmentRef(transition.end)} path="straight"
-                passProps={{ style, onMouseDown: handleMouseDown }}/>
+                passProps={{ style, onMouseDown: handleMouseDown }}
+                labels={
+                    <input className="bg-white rounded-sm border border-black text-black text-center w-20" 
+                        onMouseDown={handleMouseDown} 
+                        defaultValue={transition.weight}
+                        onBlur={submitTransitionWeight} 
+                        onKeyDown={ (e) => { if (e.key === 'Enter') submitTransitionWeight() } } 
+                        ref={weightInputRef}
+                    >
+                    </input>
+                } />
     );
 }

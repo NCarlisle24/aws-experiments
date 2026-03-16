@@ -106,6 +106,8 @@ export default function MainController() {
             modelCreatorDataStore.setData(prevData => {
                 if (prevData.model === null) return prevData;
 
+                // TODO: if the component is in focus, remove it from the set
+
                 return {
                     ...prevData, 
                     model: ModelLib.removeComponent(prevData.model, id),

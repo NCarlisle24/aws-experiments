@@ -2,8 +2,10 @@
 
 export default function Home() {
     return (
-        <div className="font-bold flex justify-center items-center">
-            hello world! (if this isn't bold, then tailwind css isn't working)
-        </div>
+        <>
+            <h1 className="title">Home</h1>
+            <br />
+            <p>Welcome! This is the home page.</p>
+        </>
     );
 }

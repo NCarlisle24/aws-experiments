@@ -409,6 +409,7 @@ export const print = (model: Model): void => {
         const end = model.compartments.get(transition.end)!;
 
         message += `ID ${transition.id} connects "${start.name}" (ID = ${start.id}) to "${end.name}" (ID = ${end.id}).\n`;
+        message += `- Weight = ${transition.weight}\n\n`;
     }
 
     message += "\n";

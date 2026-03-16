@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { ModelLib, CompartmentLib, ModelComponentLib } from './system';
+import { ModelLib, ModelComponentLib } from './system';
 import { Mode } from './enums/Mode.ts';
 
 // interface
@@ -29,7 +29,7 @@ export interface ModelCreatorContextData {
     readonly createCompartment:         (name: string, x: number, y: number) => ModelComponentLib.ModelComponentId;
     readonly createTransition:          (startId: ModelComponentLib.ModelComponentId, endId: ModelComponentLib.ModelComponentId) => ModelComponentLib.ModelComponentId;
     readonly deleteComponent:           (id: ModelComponentLib.ModelComponentId) => any;
-    readonly updateComponent:           (id: ModelComponentLib.ModelComponentId, updates: Partial<CompartmentLib.Compartment>) => any,
+    readonly updateComponent:           (id: ModelComponentLib.ModelComponentId, updates: Partial<ModelComponentLib.ModelComponent>) => any,
 
     readonly setTransitionCreatorStart: (compartmentId: ModelComponentLib.ModelComponentId | null) => any,
     readonly setTransitionCreatorEnd:   (compartmentId: ModelComponentLib.ModelComponentId | null) => any,
