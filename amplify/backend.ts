@@ -72,6 +72,10 @@ authenticatedUserRole.addToPrincipalPolicy(new PolicyStatement({
     ],
 }));
 
+// TODO: fix user permissions so that one user can't edit another user's stuff
+// Tried to do this via Amplify's built-in permission policies but utterly failed, so
+// need to port the rest API to a lambda instance that manually authenitcates everything
+
 backend.addOutput({
     custom: {
         userModelsTableName: userModelsTable.tableName

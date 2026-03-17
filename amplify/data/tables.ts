@@ -30,29 +30,37 @@ export const ZodTransitionId = z.coerce.number();
 export const ZodModelId = z.string().nonempty();
 
 export const ZodDbCompartment = z.object({
-    id: ZodCompartmentId.readonly(),
-    name: z.string().nonempty().readonly(),
-    x: z.number().readonly(),
-    y: z.number().readonly(),
+    id:             ZodCompartmentId.readonly(),
+    name:           z.string().nonempty().readonly(),
+    x:              z.number().readonly(),
+    y:              z.number().readonly(),
     outTransitions: z.array(ZodTransitionId.readonly()),
-    inTransitions: z.array(ZodTransitionId.readonly()),
+    inTransitions:  z.array(ZodTransitionId.readonly()),
 });
 
 export const ZodDbTransition = z.object({
-    id: ZodTransitionId.readonly(),
-    start: ZodCompartmentId.readonly(),
-    end: ZodCompartmentId.readonly(),
+    id:     ZodTransitionId.readonly(),
+    start:  ZodCompartmentId.readonly(),
+    end:    ZodCompartmentId.readonly(),
     weight: z.string()
+});
+
+export const ZodDbModelParameter = z.object({
+    name:    z.string().nonempty().readonly(),
+    type:    z.string().nonempty().readonly(),
+    shape:   z.string().nonempty().readonly(),
+    comment: z.string().readonly(),
 });
 
 export const ZodDbModel = z.object({
     [modelIdKeyName]: ZodModelId.readonly(),
-    [userIdKeyName]: z.string().readonly(),
-    modelName: z.string().nonempty().readonly(),
-    createdAt: z.string().nonempty().readonly(),
-    lastModifiedAt: z.string().nonempty().readonly(),
-    compartments: z.array(ZodDbCompartment.readonly()),
-    transitions: z.array(ZodDbTransition.readonly()),
+    [userIdKeyName]:  z.string().readonly(),
+    modelName:        z.string().nonempty().readonly(),
+    createdAt:        z.string().nonempty().readonly(),
+    lastModifiedAt:   z.string().nonempty().readonly(),
+    compartments:     z.array(ZodDbCompartment.readonly()),
+    transitions:      z.array(ZodDbTransition.readonly()),
+    parameters:       z.array(ZodDbModelParameter.readonly()),
 });
 
 // "normal" types
@@ -64,3 +72,4 @@ export type CompartmentId = z.infer<typeof ZodCompartmentId>;
 export type DbModel = z.infer<typeof ZodDbModel>;
 export type DbTransition = z.infer<typeof ZodDbTransition>;
 export type DbCompartment = z.infer<typeof ZodDbCompartment>;
+export type DbModelParameter = z.infer<typeof ZodDbModelParameter>;

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { ModelLib, ModelComponentLib } from './system';
+import { ModelLib, ModelComponentLib, ModelParamLib } from './system';
 import { Mode } from './enums/Mode.ts';
 
 // interface
@@ -30,6 +30,10 @@ export interface ModelCreatorContextData {
     readonly createTransition:          (startId: ModelComponentLib.ModelComponentId, endId: ModelComponentLib.ModelComponentId) => ModelComponentLib.ModelComponentId;
     readonly deleteComponent:           (id: ModelComponentLib.ModelComponentId) => any;
     readonly updateComponent:           (id: ModelComponentLib.ModelComponentId, updates: Partial<ModelComponentLib.ModelComponent>) => any,
+
+    readonly createModelParameter:      (paramName: string) => any;
+    readonly deleteModelParameter:      (paramName: string) => any;
+    readonly updateModelParameter:      (paramName: string, updates: Partial<ModelParamLib.ModelParameter>) => any;
 
     readonly setTransitionCreatorStart: (compartmentId: ModelComponentLib.ModelComponentId | null) => any,
     readonly setTransitionCreatorEnd:   (compartmentId: ModelComponentLib.ModelComponentId | null) => any,

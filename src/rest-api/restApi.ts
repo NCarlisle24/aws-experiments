@@ -120,6 +120,7 @@ const restApi = (() => {
 
                 compartments: [],
                 transitions: [],
+                parameters: [],
                 modelName: "Untitled model",
                 createdAt: timeCreated,
                 lastModifiedAt: timeCreated,

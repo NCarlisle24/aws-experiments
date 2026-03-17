@@ -2,8 +2,11 @@ import { ModelComponentType, type ModelComponent, type ModelComponentId } from "
 import type { Compartment } from "./components/Compartment";
 import type { Transition } from "./components/Transition";
 import type { DbModel, ModelId } from '../../../amplify/data/tables';
+import type { ModelParameter } from "./Parameter";
+
 import * as CompartmentLib from "./components/Compartment";
 import * as TransitionLib from "./components/Transition";
+import * as ParameterLib from "./Parameter";
 
 export { type ModelId };
 
@@ -16,6 +19,7 @@ export interface Model {
     readonly components:     ReadonlyMap<ModelComponentId, ModelComponent>,
     readonly compartments:   ReadonlyMap<ModelComponentId, Compartment>,
     readonly transitions:    ReadonlyMap<ModelComponentId, Transition>,
+    readonly parameters:     ReadonlyMap<ModelParameter["name"], ModelParameter>,
 };
 
 const MODEL_COMPONENT_TYPE_MAP = {
@@ -75,7 +79,11 @@ const MODEL_COMPONENT_TYPE_MAP = {
             const newCompartment = { ...prevCompartment, ...updates };
 
             const newComponents = new Map(model.components);
-            newComponents.set(compartmentId, newCompartment);
+            newComponents.delete(compartmentId);
+
+            if (newComponents.has(newCompartment.id)) return model;
+
+            newComponents.set(newCompartment.id, newCompartment);
 
             // return
 
@@ -178,7 +186,11 @@ const MODEL_COMPONENT_TYPE_MAP = {
             const newTransition = { ...prevTransition, ...updates };
 
             const newComponents = new Map(model.components);
-            newComponents.set(transitionId, newTransition);
+            newComponents.delete(transitionId);
+
+            if (newComponents.has(newTransition.id)) return model;
+
+            newComponents.set(newTransition.id, newTransition);
 
             // return
 
@@ -230,7 +242,11 @@ const MODEL_COMPONENT_TYPE_MAP = {
             };
 
             const newComponents = new Map(model.components);
-            newComponents.set(componentId, newComponent);
+            newComponents.delete(componentId);
+
+            if (newComponents.has(newComponent.id)) return model;
+
+            newComponents.set(newComponent.id, newComponent);
 
             const newModel: Model = {
                 ...model,
@@ -304,6 +320,51 @@ export const updateComponent = (model: Model, componentId: ModelComponentId, upd
     return componentFunctions.update(model, componentId, updates);
 }
 
+export const addParameter = (model: Model, parameter: ModelParameter): Model => {
+    if (model.parameters.has(parameter.name)) return model;
+
+    const newParameters = new Map(model.parameters);
+    newParameters.set(parameter.name, parameter);
+
+    return {
+        ...model,
+        parameters: newParameters,
+    };
+}
+
+export const deleteParameter = (model: Model, parameterName: ModelParameter["name"]): Model => {
+    if (!model.parameters.has(parameterName)) return model;
+
+    const newParameters = new Map(model.parameters);
+    newParameters.delete(parameterName);
+
+    return {
+        ...model,
+        parameters: newParameters,
+    };
+}
+
+export const updateParameter = (model: Model, parameterName: ModelParameter["name"], updates: Partial<ModelParameter>): Model => {
+    if (!model.parameters.has(parameterName)) return model;
+
+    const newParameter: ModelParameter = {
+        ...model.parameters.get(parameterName)!,
+        ...updates,
+    };
+
+    const newParameters = new Map(model.parameters);
+    newParameters.delete(parameterName);
+
+    if (newParameters.has(newParameter.name)) return model;
+
+    newParameters.set(newParameter.name, newParameter);
+
+    return {
+        ...model,
+        parameters: newParameters,
+    };
+}
+
 export const setName = (model: Model, name: string): Model => {
     return { ...model, name };
 }
@@ -311,6 +372,7 @@ export const setName = (model: Model, name: string): Model => {
 export const convertToDbModel = (model: Model): DbModel => {
     const newCompartments: DbModel["compartments"] = [];
     const newTransitions: DbModel["transitions"] = [];
+    const newParameters: DbModel["parameters"] = [];
 
     model.compartments.forEach((compartment) => {
         newCompartments.push(CompartmentLib.convertToDbCompartment(compartment));
@@ -320,6 +382,10 @@ export const convertToDbModel = (model: Model): DbModel => {
         newTransitions.push(TransitionLib.convertToDbTransition(transition));
     });
 
+    model.parameters.forEach((parameter) => {
+        newParameters.push(ParameterLib.convertToDbParameter(parameter));
+    })
+
     const convertedModel: DbModel = {
         id:             model.id,
         user_id:        model.userId,
@@ -328,6 +394,7 @@ export const convertToDbModel = (model: Model): DbModel => {
         lastModifiedAt: model.lastModifiedAt,
         compartments:   newCompartments,
         transitions:    newTransitions,
+        parameters:     newParameters,
     };
 
     return convertedModel;
@@ -350,6 +417,12 @@ export const convertFromDbModel = (dbModel: DbModel): Model => {
         [...compartments as Model["components"], ...transitions as Model["components"]]
     );
 
+    const parameters: Model["parameters"] = new Map(
+        dbModel.parameters.map(
+            parameter => [parameter.name, ParameterLib.convertFromDbParameter(parameter)]
+        )
+    );
+
     const model: Model = {
         id:             dbModel.id,
         userId:         dbModel.user_id,
@@ -359,6 +432,7 @@ export const convertFromDbModel = (dbModel: DbModel): Model => {
         components,
         compartments,
         transitions,
+        parameters,
     };
 
     return model;
@@ -368,7 +442,7 @@ export const print = (model: Model): void => {
     let message = `\nPrinting model "${model.name}" (ID = ${model.id}):\n\nCOMPARTMENTS\n\n`;
 
     if (model.compartments.size == 0) {
-        message += "(none)\n\n";
+        message += "(none)\n";
     }
 
     for (const compartment of model.compartments.values()) {
@@ -412,7 +486,138 @@ export const print = (model: Model): void => {
         message += `- Weight = ${transition.weight}\n\n`;
     }
 
-    message += "\n";
+    message += "\nPARAMETERS\n\n";
+
+    if (model.parameters.size == 0) {
+        message += "(none)\n\n";
+    }
+
+    for (const parameter of model.parameters.values()) {
+        message += `Parameter "${parameter.name}":\n`;
+        message += `- Type: "${parameter.type}"\n`;
+        message += `- Shape: "${parameter.shape}"\n`;
+        message += `- Comment: "${parameter.comment}"\n\n`;
+    }
     
     console.log(message);
+}
+
+export const convertToEpimorphCode = (model: Model): string => {
+    let output = `class MyModel(CompartmentModel):\n    compartments = [`;
+
+    // compartments
+
+    const compartments = Array.from(model.compartments.values());
+    const getEpimorphCompartmentName = (compartment: CompartmentLib.Compartment) => compartment.name;
+
+    if (compartments.length == 0) {
+        output += `]`;
+    } else {
+        for (const compartment of compartments) {
+            output += `\n        compartment('${getEpimorphCompartmentName(compartment)}'),`
+        }
+
+        output += `\n    ]`;
+    }
+    
+    // parameters
+
+    const parameters = Array.from(model.parameters.values());
+    const getEpimorphParameterName = (parameter: ParameterLib.ModelParameter) => parameter.name;
+
+    output += `\n\n    requirements = [`;
+
+    if (parameters.length == 0) {
+        output += `]`;
+    } else {
+        for (const parameter of parameters) {
+            output += `\n        AttributeDef('${getEpimorphParameterName(parameter)}', type=${parameter.type}, shape=Shapes.${parameter.shape}`;
+            output += `\n                     comment='${parameter.comment}'`;
+        }
+
+        output += `\n    ]`;
+    }
+
+    // edges
+
+    const transitions = Array.from(model.transitions.values());
+    output += `\n\n    def edges(self, symbols):`;
+
+    if (transitions.length == 0) {
+        output += `\n        return []`;
+    } else {
+
+        // loading compartment variables
+
+        if (compartments.length > 0) {
+            output += `\n        [`;
+
+            for (let i = 0; i < compartments.length; i++) {
+                const compartment = compartments[i];
+
+                output += getEpimorphCompartmentName(compartment);
+
+                if (i < compartments.length - 1) output += `, `;
+            }
+
+            output += `] = symbols.all_compartments`;
+        }
+        
+        // load parameter variables
+
+        if (parameters.length > 0) {
+            output += `\n        [`;
+
+            for (let i = 0; i < parameters.length; i++) {
+                const parameter = parameters[i];
+
+                output += getEpimorphParameterName(parameter);
+
+                if (i < parameters.length - 1) output += `, `;
+            }
+
+            output += `] = symbols.all_requirements`;
+        }
+
+        // load derived variables (not implemented yet)
+
+        // return edges
+
+        output += `\n\n        return [`;
+
+        for (const compartment of compartments) {
+            if (compartment.outTransitions.size == 0) continue;
+
+            output += `\n            `;
+
+            const startName = getEpimorphCompartmentName(compartment);
+
+            if (compartment.outTransitions.size == 1) {
+                const transitionId = compartment.outTransitions.values().next().value!;
+                const transition = model.transitions.get(transitionId)!;
+                const endName = getEpimorphCompartmentName(model.compartments.get(transition.end)!)
+                
+                output += `edge(${startName}, ${endName}, rate=${transition.weight}),`;
+
+                continue;
+            }
+
+            output += `fork(`;
+
+            for (const transitionId of compartment.outTransitions) {
+                const transition = model.transitions.get(transitionId)!;
+                const endName = getEpimorphCompartmentName(model.compartments.get(transition.end)!)
+                
+                output += `\n                edge(${startName}, ${endName}, rate=${transition.weight}),`;
+            }
+
+            output += `\n            ),`;
+        }
+
+        output +=  `\n        ]`;
+    }
+
+    output += `\n\nmy_model = MyModel()`;
+
+    return output;
 }

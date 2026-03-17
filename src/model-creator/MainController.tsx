@@ -24,7 +24,7 @@ import {
 // misc types
 
 import { Mode } from './enums/Mode.ts';
-import { ModelLib, CompartmentLib, TransitionLib, ModelComponentLib } from './system/index.ts';
+import { ModelLib, CompartmentLib, TransitionLib, ModelComponentLib, ModelParamLib } from './system';
 
 // styling
 
@@ -125,6 +125,41 @@ export default function MainController() {
                 return {
                     ...prevData,
                     model: ModelLib.updateComponent(prevData.model, id, updates),
+                };
+            });
+        },
+
+        createModelParameter: (paramName: string) => {
+            const newParam: ModelParamLib.ModelParameter = ModelParamLib.createParameter(paramName);
+            
+            modelCreatorDataStore.setData(prevData => {
+                if (prevData.model === null) return prevData;
+
+                return {
+                    ...prevData,
+                    model: ModelLib.addParameter(prevData.model, newParam),
+                };
+            });
+        },
+
+        deleteModelParameter: (paramName: string) => {
+            modelCreatorDataStore.setData(prevData => {
+                if (prevData.model === null) return prevData;
+
+                return {
+                    ...prevData,
+                    model: ModelLib.deleteParameter(prevData.model, paramName),
+                }
+            });
+        },
+
+        updateModelParameter: (paramName: string, updates: Partial<ModelParamLib.ModelParameter>) => {
+            modelCreatorDataStore.setData(prevData => {
+                if (prevData.model === null) return prevData;
+
+                return {
+                    ...prevData,
+                    model: ModelLib.updateParameter(prevData.model, paramName, updates),
                 };
             });
         },
@@ -260,7 +295,7 @@ export default function MainController() {
     return (
         <ModelCreatorContext.Provider value={modelCreatorDataStore}>
             <ModelCreatorNavbar />
-            <main className="grid grid-cols-2 h-full w-full" style={{ gridTemplateColumns: "1fr 3fr" }}
+            <main className="grid grid-cols-2 h-full w-full" style={{ gridTemplateColumns: "1fr 4fr" }}
                     onContextMenu={(e) => e.preventDefault()}>
 
                 <div className="bg-tertiary col-start-1 col-span-1">

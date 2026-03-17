@@ -1,16 +1,20 @@
 import CompartmentTool from "./CompartmentTool";
+import ModeSelectorBar from "./ModeSelectorBar";
+import ModelParameter from "./ModelParameter";
+
 import { useModelCreator, type ModelCreatorContextData } from "../../ModelCreatorContext";
 import { Mode } from "../../enums/Mode";
 
 import React from 'react';
-import ModeSelectorBar from "./ModeSelectorBar";
+import CreateParameterButton from "./CreateParameterButton";
 
 const contextDataSelector = (data: ModelCreatorContextData) => ({
-    mode: data.mode 
+    mode: data.mode,
+    modelParams: data.model?.parameters,
 });
 
 export default function Toolbox() {
-    const { mode } = useModelCreator(contextDataSelector);
+    const { mode, modelParams } = useModelCreator(contextDataSelector);
 
     let cursor = "default";
     if (Mode.isEqual(mode, Mode.CREATE_COMPARTMENT) || Mode.isEqual(mode, Mode.MOVE_COMPARTMENT)) {
@@ -20,16 +24,34 @@ export default function Toolbox() {
     }
 
     const style: React.CSSProperties = {
-        cursor
+        cursor,
+        gridTemplateRows: "50% 50%",
     };
 
     return (
-        <div className="flex flex-col justify-around items-center min-h-full w-full z-[-1024] py-5" style={style}>
-            <div className="grow flex flex-col justify-around items-center">
-                <CompartmentTool name="Compartment"/>
+        <div className="grid grid-rows-2 min-h-full w-full z-[-1024] py-5 px-6" style={style}>
+            <div className="flex flex-col">
+                <span className="text-xl font-bold">Tools</span>
+                <div className="grow flex flex-col py-4 gap-4">
+                    <ModeSelectorBar />
+                    <div className="grow">
+                        <CompartmentTool name="Compartment"/>
+                    </div>
+                </div>
             </div>
-            
-            <ModeSelectorBar />
+            <div className="flex flex-col items-start gap-2 w-full">
+                <span className="text-xl font-bold">Parameters</span>
+                {!modelParams ? 
+                    <>Loading...</>
+                : 
+                    <>
+                        <CreateParameterButton />
+                        <div className="overflow-y-scroll w-full">
+                            {Array.from(modelParams).map(([_, param]) => <ModelParameter paramName={param.name} key={param.name} />)}
+                        </div>
+                    </>
+                }
+            </div>
         </div>
     );
 }

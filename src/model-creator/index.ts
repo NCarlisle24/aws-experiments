@@ -1,4 +1,4 @@
 import MainController from "./MainController";
-import { ModelLib } from "./system";
+import { ModelLib, ModelParamLib } from "./system";
 
-export { MainController as ModelCreator, ModelLib };
+export { MainController as ModelCreator, ModelLib, ModelParamLib };

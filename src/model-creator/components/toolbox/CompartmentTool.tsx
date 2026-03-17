@@ -83,7 +83,7 @@ export default function CompartmentTool({ name }: CompartmentToolProps) {
     };
 
     return (
-        <div className="relative top-0 left-0">
+        <div className="relative top-0 left-0 flex flex-col items-start">
             <CompartmentTemplate {...nonDraggableTemplateProps}></CompartmentTemplate>
             <CompartmentTemplate {...draggableTemplateProps} ref={compartmentCreatorRef}></CompartmentTemplate>
         </div>

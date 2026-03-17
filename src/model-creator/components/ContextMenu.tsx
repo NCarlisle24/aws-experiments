@@ -63,11 +63,6 @@ export default function ContextMenu() {
 
     }, [focusedComponentIds]);
 
-    const setTransitionWeight = React.useCallback(() => {
-        if (focusedComponentIds.length != 1) return;
-
-    }, [focusedComponentIds]);
-
     // render
 
     if (!isActive) return;
