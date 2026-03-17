@@ -1,4 +1,4 @@
-import { Attribute as DynamoAttribute, AttributeType as DynamoAttributeType } from 'aws-cdk-lib/aws-dynamodb';
+import { type Attribute as DynamoAttribute, AttributeType as DynamoAttributeType } from 'aws-cdk-lib/aws-dynamodb';
 import * as z from 'zod';
 
 // table information
