@@ -58,10 +58,10 @@ export default function ContextMenu() {
 
     }, [focusedComponentIds]);
 
-    const renameCompartment = React.useCallback(() => {
-        if (focusedComponentIds.length != 1) return;
+    // const renameCompartment = React.useCallback(() => {
+    //     if (focusedComponentIds.length != 1) return;
 
-    }, [focusedComponentIds]);
+    // }, [focusedComponentIds]);
 
     // render
 
